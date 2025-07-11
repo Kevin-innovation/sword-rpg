@@ -33,7 +33,7 @@ export default function Home() {
             <StatsPanel />
             <EnhanceButton />
           </GameBoard>
-          <Ranking />
+          {/* <Ranking /> */}
           <Inventory />
           <Shop />
         </div>

@@ -44,64 +44,49 @@ export default function EnhanceButton() {
     if (disabled) return;
     setDisabled(true);
     setAnim(true);
-    let cost = calculateEnhanceCost(swordLevel);
-    let chance = calculateEnhanceChance(swordLevel);
-    // 아이템 효과 적용 (추후 서버와 동기화 필요)
-    if (useDoubleChance && items.doubleChance > 0) chance = Math.min(chance * 2, 100);
-    if (useDiscount && items.discount > 0) cost = Math.floor(cost * 0.5);
-    if (money < cost) {
-      setResult(null);
-      setAnim(false);
+    
+    if (!user?.id) {
+      alert("로그인이 필요합니다!");
       setDisabled(false);
-      return alert("돈이 부족합니다!");
+      setAnim(false);
+      return;
     }
+    
     try {
       const res = await fetch("/api/enhance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: user?.id,
+          userId: user.id,
           currentLevel: swordLevel,
-          money,
-          cost,
-          clientTimestamp: Date.now(),
-          useDoubleChance,
-          useProtect,
-          useDiscount,
         }),
       });
+      
       const data = await res.json();
+      
       if (!res.ok) {
-        setResult(null);
-        setAnim(false);
+        alert(data.error || "강화 중 오류 발생");
         setDisabled(false);
-        return alert(data.error || "강화 중 오류 발생");
+        setAnim(false);
+        return;
       }
+      
       // 서버 응답에 따라 상태 갱신
       if (data.success) {
         setSwordLevel(data.newLevel);
-        setEnhanceChance(calculateEnhanceChance(data.newLevel));
-        setEnhanceCost(calculateEnhanceCost(data.newLevel));
-        setMoney(money - cost);
         setResult("success");
+        alert("강화 성공! 레벨 " + data.newLevel);
       } else {
         setSwordLevel(0);
-        setEnhanceChance(100);
-        setEnhanceCost(100);
-        setFragments(fragments + (data.fragmentsGained || 0));
-        setMoney(money - cost);
         setResult("fail");
+        alert("강화 실패! 레벨 0으로 초기화");
       }
-      // 최신 아이템 보유량 반영
-      if (data.inventory) {
-        // inventory: [{ item_id, quantity }, ...]
-        // item_id와 type 매핑 필요시 추가 구현
-        // 예시: setItems({ doubleChance: x, protect: y, discount: z })
-      }
+      
     } catch (e) {
-      setResult(null);
+      console.error("강화 오류:", e);
       alert("서버 통신 오류");
     }
+    
     setTimeout(() => {
       setAnim(false);
       setDisabled(false);
