@@ -15,23 +15,62 @@ export function useGameData() {
     setError(null);
     
     try {
-      // 사용자 정보 가져오기
-      const { data: userData, error: userError } = await supabase
+      // 사용자 정보 가져오기 - 없으면 생성
+      let userData = null;
+      let { data: existingUser, error: userError } = await supabase
         .from('users')
         .select('money, fragments')
         .eq('id', user.id)
         .single();
       
-      if (userError) throw userError;
+      if (userError || !existingUser) {
+        // 사용자가 없으면 생성
+        console.log('Creating missing user in loadUserData:', user.id);
+        const { data: newUser, error: createError } = await supabase
+          .from('users')
+          .insert({
+            id: user.id,
+            money: 30000,
+            fragments: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .select('money, fragments')
+          .single();
+        
+        if (createError) throw createError;
+        userData = newUser;
+      } else {
+        userData = existingUser;
+      }
       
-      // 검 정보 가져오기
-      const { data: swordData, error: swordError } = await supabase
+      // 검 정보 가져오기 - 없으면 생성
+      let swordData = null;
+      let { data: existingSword, error: swordError } = await supabase
         .from('swords')
         .select('level')
         .eq('user_id', user.id)
         .single();
       
-      if (swordError) throw swordError;
+      if (swordError || !existingSword) {
+        // 검이 없으면 생성
+        console.log('Creating missing sword in loadUserData:', user.id);
+        const { data: newSword, error: createSwordError } = await supabase
+          .from('swords')
+          .insert({
+            user_id: user.id,
+            level: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .select('level')
+          .single();
+        
+        if (createSwordError) throw createSwordError;
+        swordData = newSword;
+      } else {
+        swordData = existingSword;
+      }
       
       // 상태 업데이트
       if (userData) {
