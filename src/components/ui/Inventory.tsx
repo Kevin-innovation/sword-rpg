@@ -26,7 +26,7 @@ const Inventory = () => {
         .eq("user_id", user.id);
       if (error) return;
       // type별로 매핑
-      const itemsObj: { [key: string]: number } = { doubleChance: 0, protect: 0, discount: 0 };
+      const itemsObj = { doubleChance: 0, protect: 0, discount: 0 };
       data?.forEach((row: any) => {
         let type: string | undefined;
         if (Array.isArray(row.items)) {
@@ -34,8 +34,8 @@ const Inventory = () => {
         } else if (row.items && typeof row.items === 'object') {
           type = (row.items as any).type;
         }
-        if (type && itemsObj.hasOwnProperty(type)) {
-          itemsObj[type] = row.quantity;
+        if (type && (type === 'doubleChance' || type === 'protect' || type === 'discount')) {
+          itemsObj[type as keyof typeof itemsObj] = row.quantity;
         }
       });
       setItems(itemsObj);
