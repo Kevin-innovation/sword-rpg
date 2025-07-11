@@ -6,6 +6,27 @@
 > 검을 강화하여 최고 레벨에 도전해보세요!  
 > 회원가입 후 랭킹에서 다른 플레이어들과 경쟁할 수 있습니다.
 
+## 🚀 Vercel 배포 설정
+
+### 환경변수 설정 (중요!)
+Vercel 대시보드에서 다음 환경변수를 설정해야 합니다:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+```
+
+**설정 방법:**
+1. Vercel 대시보드 → 프로젝트 선택
+2. Settings → Environment Variables
+3. 위 두 변수를 Production, Preview, Development에 모두 추가
+4. 저장 후 다시 배포
+
+**Supabase 키 확인 방법:**
+1. Supabase 대시보드 → 프로젝트 선택
+2. Settings → API
+3. Project URL과 anon public key 복사
+
 ## 🛠️ 프로젝트 세팅 및 개발 규칙
 
 ### 1. Tailwind CSS v4 적용
