@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { validateEnhancement } from "@/lib/antiCheat";
-import { calculateEnhanceChance, calculateEnhanceCost, calculateFragmentsGained } from "@/lib/gameLogic";
-import { supabase } from "@/lib/supabase";
+import { validateEnhancement } from "../../lib/antiCheat";
+import { calculateEnhanceChance, calculateEnhanceCost, calculateFragmentsGained } from "../../lib/gameLogic";
+import { supabase } from "../../lib/supabase";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
