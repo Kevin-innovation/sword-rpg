@@ -1,0 +1,67 @@
+import { create } from 'zustand';
+import { calculateEnhanceChance, calculateEnhanceCost } from '@/lib/gameLogic';
+
+export type GameState = {
+  user: { id: string; email?: string; nickname?: string } | null;
+  money: number;
+  swordLevel: number;
+  fragments: number;
+  enhanceChance: number;
+  enhanceCost: number;
+  isEnhancing: boolean;
+  // 아이템 보유 수량
+  items: {
+    doubleChance: number;
+    protect: number;
+    discount: number;
+  };
+  foundSwords: boolean[];
+  setUser: (user: { id: string; email?: string; nickname?: string } | null) => void;
+  setItems: (items: GameState["items"]) => void;
+  reset: () => void;
+  setMoney: (money: number) => void;
+  setSwordLevel: (level: number) => void;
+  setFragments: (fragments: number) => void;
+  setEnhanceChance: (chance: number) => void;
+  setEnhanceCost: (cost: number) => void;
+  setIsEnhancing: (is: boolean) => void;
+  setFoundSwords: (found: boolean[]) => void;
+};
+
+export const useGameState = create<GameState>((set) => ({
+  user: null,
+  money: 30000,
+  swordLevel: 0,
+  fragments: 0,
+  enhanceChance: 100,
+  enhanceCost: 100,
+  isEnhancing: false,
+  items: {
+    doubleChance: 0,
+    protect: 0,
+    discount: 0,
+  },
+  foundSwords: (() => { const arr = Array(21).fill(false); arr[0] = true; return arr; })(),
+  setUser: (user) => set({ user }),
+  setItems: (items) => set({ items }),
+  reset: () => set({
+    user: null,
+    money: 30000,
+    swordLevel: 0,
+    fragments: 0,
+    enhanceChance: 100,
+    enhanceCost: 100,
+    isEnhancing: false
+  }),
+  setMoney: (money) => set({ money }),
+  setSwordLevel: (swordLevel) => set({
+    swordLevel,
+    enhanceChance: calculateEnhanceChance(swordLevel),
+    enhanceCost: calculateEnhanceCost(swordLevel)
+  }),
+  setFragments: (fragments) => set({ fragments }),
+  setEnhanceChance: (enhanceChance) => set({ enhanceChance }),
+  setEnhanceCost: (enhanceCost) => set({ enhanceCost }),
+  setIsEnhancing: (isEnhancing) => set({ isEnhancing }),
+  setFoundSwords: (found) => set({ foundSwords: found }),
+})); 
