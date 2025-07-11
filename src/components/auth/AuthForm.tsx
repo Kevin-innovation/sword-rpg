@@ -20,6 +20,34 @@ export default function AuthForm() {
         // 유저 정보 zustand에 저장
         const { id, email, user_metadata } = session.user;
         setUser({ id, email, nickname: user_metadata?.nickname });
+        
+        // users 테이블에 사용자 레코드 생성 (없으면 생성)
+        const { error } = await supabase
+          .from('users')
+          .upsert({
+            id: id,
+            email: email,
+            nickname: user_metadata?.nickname || email?.split('@')[0] || '유저',
+            money: 30000,
+            fragments: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'id'
+          });
+        
+        // swords 테이블에 기본 검 레코드 생성 (없으면 생성)
+        await supabase
+          .from('swords')
+          .upsert({
+            user_id: id,
+            level: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'user_id'
+          });
+        
         router.replace("/");
       }
     });
@@ -38,6 +66,34 @@ export default function AuthForm() {
       // 유저 정보 zustand에 저장
       const { id, email, user_metadata } = data.user;
       setUser({ id, email, nickname: user_metadata?.nickname });
+      
+      // users 테이블에 사용자 레코드 생성 (없으면 생성)
+      await supabase
+        .from('users')
+        .upsert({
+          id: id,
+          email: email,
+          nickname: user_metadata?.nickname || email?.split('@')[0] || '유저',
+          money: 30000,
+          fragments: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'id'
+        });
+      
+      // swords 테이블에 기본 검 레코드 생성 (없으면 생성)
+      await supabase
+        .from('swords')
+        .upsert({
+          user_id: id,
+          level: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id'
+        });
+      
       router.replace("/");
     }
     setLoading(false);
@@ -57,6 +113,34 @@ export default function AuthForm() {
     if (data.user) {
       const { id, email, user_metadata } = data.user;
       setUser({ id, email, nickname: user_metadata?.nickname });
+      
+      // users 테이블에 사용자 레코드 생성
+      await supabase
+        .from('users')
+        .upsert({
+          id: id,
+          email: email,
+          nickname: user_metadata?.nickname || nickname,
+          money: 30000,
+          fragments: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'id'
+        });
+      
+      // swords 테이블에 기본 검 레코드 생성
+      await supabase
+        .from('swords')
+        .upsert({
+          user_id: id,
+          level: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id'
+        });
+      
       router.replace("/");
     }
     setLoading(false);
