@@ -1,4 +1,4 @@
-import * as React from "react";
+import { useEffect } from "react";
 import { useGameState } from "@/store/useGameState";
 import { calculateSwordSellPrice } from "@/lib/gameLogic";
 import { supabase } from "@/lib/supabase";
@@ -17,7 +17,7 @@ const Inventory = () => {
   const user = useGameState((s) => s.user);
   const setItems = useGameState((s) => s.setItems);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchInventory = async () => {
       if (!user?.id) return;
       const { data, error } = await supabase
@@ -26,13 +26,13 @@ const Inventory = () => {
         .eq("user_id", user.id);
       if (error) return;
       // type별로 매핑
-      const itemsObj = { doubleChance: 0, protect: 0, discount: 0 };
-      data?.forEach((row) => {
+      const itemsObj: { [key: string]: number } = { doubleChance: 0, protect: 0, discount: 0 };
+      data?.forEach((row: any) => {
         let type: string | undefined;
         if (Array.isArray(row.items)) {
           type = row.items[0]?.type;
         } else if (row.items && typeof row.items === 'object') {
-          type = row.items.type;
+          type = (row.items as any).type;
         }
         if (type && itemsObj.hasOwnProperty(type)) {
           itemsObj[type] = row.quantity;
