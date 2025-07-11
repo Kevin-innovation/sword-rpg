@@ -6,6 +6,7 @@ export type RankingEntry = {
   nickname: string;
   maxLevel: number;
   totalGold: number;
+  fragments: number;
 };
 
 export function useRealTimeRanking() {
