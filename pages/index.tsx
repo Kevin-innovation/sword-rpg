@@ -8,6 +8,7 @@ import EnhanceButton from "@/components/game/EnhanceButton";
 import Inventory from "@/components/ui/Inventory";
 import Shop from "@/components/ui/Shop";
 import Ranking from "@/components/ui/Ranking";
+import UserSection from "@/components/ui/UserSection";
 
 export default function Home() {
   const router = useRouter();
@@ -28,6 +29,7 @@ export default function Home() {
 
       <main className="relative z-10 min-h-screen w-full flex flex-col items-center justify-center px-4 py-8">
         <div className="w-full max-w-full md:max-w-lg space-y-6 md:space-y-8">
+          <UserSection />
           <GameBoard>
             <SwordDisplay />
             <StatsPanel />

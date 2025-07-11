@@ -75,7 +75,7 @@ export default function EnhanceButton() {
       if (data.success) {
         setSwordLevel(data.newLevel);
         setResult("success");
-        alert("강화 성공! 레벨 " + data.newLevel);
+        // 성공시 알림창 제거 - 시각적 효과만 표시
       } else {
         setSwordLevel(0);
         setResult("fail");
