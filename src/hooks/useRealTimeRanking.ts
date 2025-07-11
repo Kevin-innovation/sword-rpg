@@ -13,19 +13,32 @@ export function useRealTimeRanking() {
 
   useEffect(() => {
     const fetchRanking = async () => {
-      const { data, error } = await supabase
-        .from("rankings")
-        .select("max_sword_level, total_gold, users(nickname)")
-        .order("max_sword_level", { ascending: false })
-        .order("total_gold", { ascending: false })
-        .limit(10);
-      if (error) return;
-      const mapped = (data || []).map((row: any) => ({
-        nickname: row.users?.nickname || "-",
-        maxLevel: row.max_sword_level,
-        totalGold: row.total_gold,
-      }));
-      setRanking(mapped);
+      try {
+        const { data, error } = await supabase
+          .from("users")
+          .select(`
+            nickname,
+            money,
+            fragments,
+            swords!inner(level)
+          `)
+          .order("swords.level", { ascending: false })
+          .limit(10);
+        
+        if (error) {
+          console.error("Ranking fetch error:", error);
+          return;
+        }
+        
+        const mapped = (data || []).map((row: any) => ({
+          nickname: row.nickname || "익명",
+          maxLevel: row.swords?.level || 0,
+          totalGold: row.money || 0,
+        }));
+        setRanking(mapped);
+      } catch (err) {
+        console.error("Ranking error:", err);
+      }
     };
     fetchRanking();
   }, []);
