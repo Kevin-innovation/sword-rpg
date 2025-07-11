@@ -14,25 +14,40 @@ export function useRealTimeRanking() {
   useEffect(() => {
     const fetchRanking = async () => {
       try {
-        const { data, error } = await supabase
+        // 단순화된 쿼리 - 조인 없이 별도로 조회
+        const { data: swords, error: swordError } = await supabase
           .from("swords")
-          .select(`
-            level,
-            users!inner(nickname, money)
-          `)
+          .select("level, user_id")
           .order("level", { ascending: false })
           .limit(10);
         
-        if (error) {
-          console.error("Ranking fetch error:", error);
+        if (swordError || !swords) {
+          console.error("Sword ranking fetch error:", swordError);
           return;
         }
         
-        const mapped = (data || []).map((row: any) => ({
-          nickname: row.users?.nickname || "익명",
-          maxLevel: row.level || 0,
-          totalGold: row.users?.money || 0,
-        }));
+        // 사용자 정보 별도 조회
+        const userIds = swords.map(s => s.user_id);
+        const { data: users, error: userError } = await supabase
+          .from("users")
+          .select("id, nickname, money")
+          .in("id", userIds);
+        
+        if (userError) {
+          console.error("User info fetch error:", userError);
+          return;
+        }
+        
+        // 데이터 매핑
+        const mapped = swords.map(sword => {
+          const user = users?.find(u => u.id === sword.user_id);
+          return {
+            nickname: user?.nickname || "익명",
+            maxLevel: sword.level || 0,
+            totalGold: user?.money || 0,
+          };
+        });
+        
         setRanking(mapped);
       } catch (err) {
         console.error("Ranking error:", err);

@@ -1,8 +1,59 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { validateEnhancement } from '../../lib/antiCheat';
-import { calculateEnhanceChance, calculateEnhanceCost, calculateFragmentsGained } from '../../lib/gameLogic';
 import { supabase } from '../../lib/supabase';
-import type { User, Sword } from '../../lib/types';
+
+// 강화 확률 계산
+function calculateEnhanceChance(level: number): number {
+  if (level === 0) return 100;
+  if (level === 1) return 90;
+  if (level === 2) return 80;
+  if (level === 3) return 75;
+  if (level === 4) return 70;
+  if (level === 5) return 65;
+  if (level === 6) return 60;
+  if (level === 7) return 55;
+  if (level === 8) return 50;
+  if (level === 9) return 45;
+  if (level === 10) return 40;
+  if (level === 11) return 30;
+  if (level === 12) return 25;
+  if (level === 13) return 20;
+  if (level === 14) return 15;
+  if (level === 15) return 10;
+  if (level === 16) return 7;
+  if (level === 17) return 5;
+  if (level === 18) return 3;
+  if (level === 19) return 2;
+  if (level === 20) return 1;
+  return 1;
+}
+
+// 강화 비용 계산
+function calculateEnhanceCost(level: number): number {
+  return Math.floor(100 * Math.pow(1.7, level));
+}
+
+// 조각 획득량 계산
+function calculateFragmentsGained(level: number): number {
+  return level * 50;
+}
+
+// 치트 방지 검증
+async function validateEnhancement(
+  userId: string,
+  currentLevel: number,
+  cost: number,
+  clientTimestamp: number
+): Promise<boolean> {
+  // 시간차 검증 (5초 이내)
+  const timeDiff = Math.abs(Date.now() - clientTimestamp);
+  if (timeDiff > 5000) return false;
+  
+  // 비용 재계산 검증
+  const expectedCost = calculateEnhanceCost(currentLevel);
+  if (cost !== expectedCost) return false;
+  
+  return true;
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
