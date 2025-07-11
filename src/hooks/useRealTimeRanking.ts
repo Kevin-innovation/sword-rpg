@@ -26,11 +26,11 @@ export function useRealTimeRanking() {
           return;
         }
         
-        // 사용자 정보 별도 조회 (nickname 필드가 없을 수 있으므로 안전하게 처리)
+        // 사용자 정보 별도 조회
         const userIds = swords.map(s => s.user_id);
         const { data: users, error: userError } = await supabase
           .from("users")
-          .select("id, email, money")
+          .select("id, email, money, fragments")
           .in("id", userIds);
         
         if (userError) {
@@ -38,14 +38,21 @@ export function useRealTimeRanking() {
           return;
         }
         
-        // 데이터 매핑
+        // 데이터 매핑 및 정렬
         const mapped = swords.map(sword => {
           const user = users?.find(u => u.id === sword.user_id);
           return {
             nickname: user?.email?.split('@')[0] || "익명",
             maxLevel: sword.level || 0,
             totalGold: user?.money || 0,
+            fragments: user?.fragments || 0,
           };
+        }).sort((a, b) => {
+          // 1순위: 최고 레벨, 2순위: 골드
+          if (a.maxLevel !== b.maxLevel) {
+            return b.maxLevel - a.maxLevel;
+          }
+          return b.totalGold - a.totalGold;
         });
         
         setRanking(mapped);

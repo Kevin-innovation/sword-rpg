@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useGameState } from "@/store/useGameState";
 import { calculateEnhanceChance, calculateEnhanceCost, calculateFragmentsOnFail, calculateSwordSellPrice } from "@/lib/gameLogic";
+import { useGameData } from "@/hooks/useGameData";
 import { motion } from "framer-motion";
 
 export default function EnhanceButton() {
   const { money, swordLevel, setMoney, setSwordLevel, setEnhanceChance, setEnhanceCost, fragments, setFragments } = useGameState();
+  const { loading: dataLoading, updateUserData, updateSwordLevel } = useGameData();
   const [result, setResult] = useState<null | "success" | "fail">(null);
   const [anim, setAnim] = useState(false);
   const [disabled, setDisabled] = useState(false);
@@ -79,7 +81,13 @@ export default function EnhanceButton() {
       } else {
         setSwordLevel(0);
         setResult("fail");
-        alert("강화 실패! 레벨 0으로 초기화");
+        // 실패시 조각 업데이트
+        if (data.fragmentsGained > 0) {
+          setFragments(data.newFragments);
+          alert(`강화 실패! 레벨 0으로 초기화되었지만 조각 ${data.fragmentsGained}개를 획득했습니다.`);
+        } else {
+          alert("강화 실패! 레벨 0으로 초기화");
+        }
       }
       
     } catch (e) {
