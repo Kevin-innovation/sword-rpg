@@ -5,7 +5,7 @@ import { useGameData } from "@/hooks/useGameData";
 import { motion } from "framer-motion";
 
 export default function EnhanceButton() {
-  const { money, swordLevel, setMoney, setSwordLevel, setEnhanceChance, setEnhanceCost, fragments, setFragments } = useGameState();
+  const { money, swordLevel, setMoney, setSwordLevel, setEnhanceChance, setEnhanceCost, fragments, setFragments, refreshRanking } = useGameState();
   const { loading: dataLoading, updateUserData, updateSwordLevel } = useGameData();
   const [result, setResult] = useState<null | "success" | "fail">(null);
   const [anim, setAnim] = useState(false);
@@ -106,6 +106,8 @@ export default function EnhanceButton() {
         if (user?.id) {
           loadUserAchievements(user.id);
         }
+        // 성공시 랭킹 새로고침 트리거
+        refreshRanking();
         // 성공시 알림창 제거 - 시각적 효과만 표시
       } else {
         setSwordLevel(data.newLevel);

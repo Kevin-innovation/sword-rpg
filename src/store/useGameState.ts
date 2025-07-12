@@ -18,6 +18,7 @@ export type GameState = {
   };
   foundSwords: boolean[];
   isLoadingAchievements: boolean;
+  rankingRefreshTrigger: number; // 랭킹 새로고침 트리거
   setUser: (user: { id: string; email?: string; nickname?: string } | null) => void;
   setItems: (items: GameState["items"]) => void;
   reset: () => void;
@@ -29,6 +30,7 @@ export type GameState = {
   setIsEnhancing: (is: boolean) => void;
   setFoundSwords: (found: boolean[]) => void;
   loadUserAchievements: (userId: string) => Promise<void>;
+  refreshRanking: () => void; // 랭킹 새로고침 함수
 };
 
 // Global cache to prevent duplicate achievement loads
@@ -51,6 +53,7 @@ export const useGameState = create<GameState>((set, get) => ({
   },
   foundSwords: (() => { const arr = Array(21).fill(false); arr[0] = true; return arr; })(),
   isLoadingAchievements: false,
+  rankingRefreshTrigger: 0,
   setUser: (user) => set({ user }),
   setItems: (items) => set({ items }),
   reset: () => set({
@@ -134,5 +137,8 @@ export const useGameState = create<GameState>((set, get) => ({
       activeRequests.delete(userId);
       set({ isLoadingAchievements: false });
     }
+  },
+  refreshRanking: () => {
+    set((state) => ({ rankingRefreshTrigger: state.rankingRefreshTrigger + 1 }));
   },
 })); 

@@ -1,11 +1,12 @@
 // 실시간 랭킹 훅 구현
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { useGameState } from "@/store/useGameState";
 
 // Global protection against spam requests
 let isGloballyLoading = false;
 let lastFetchTime = 0;
-const FETCH_COOLDOWN = 10000; // 10초 쿨다운
+const FETCH_COOLDOWN = 3000; // 3초로 단축 (너무 길었음)
 
 export type RankingEntry = {
   nickname: string;
@@ -17,23 +18,22 @@ export type RankingEntry = {
 export function useRealTimeRanking() {
   const [ranking, setRanking] = useState<RankingEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const user = useGameState((state) => state.user);
+  const rankingRefreshTrigger = useGameState((state) => state.rankingRefreshTrigger);
 
-  useEffect(() => {
-    let isMounted = true;
+  const fetchRanking = async (forceRefresh = false) => {
+    if (isLoading || isGloballyLoading) return;
     
-    const fetchRanking = async () => {
-      if (isLoading || isGloballyLoading) return; // 로딩 중이면 중단
-      
-      // 쿨다운 체크
-      const now = Date.now();
-      if (now - lastFetchTime < FETCH_COOLDOWN) {
-        console.log('Ranking fetch cooldown active');
-        return;
-      }
-      
-      isGloballyLoading = true;
-      lastFetchTime = now;
-      setIsLoading(true);
+    // 강제 새로고침이 아니면 쿨다운 체크
+    const now = Date.now();
+    if (!forceRefresh && (now - lastFetchTime < FETCH_COOLDOWN)) {
+      console.log('Ranking fetch cooldown active');
+      return;
+    }
+    
+    isGloballyLoading = true;
+    lastFetchTime = now;
+    setIsLoading(true);
       try {
         // rankings 테이블에서 최고 레벨 기록 조회
         const { data: rankings, error: rankingError } = await supabase
@@ -83,23 +83,36 @@ export function useRealTimeRanking() {
       } catch (err) {
         console.error("Ranking error:", err);
       } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+        setIsLoading(false);
         isGloballyLoading = false;
       }
-    };
-    
-    // 1초 지연 후 랭킹 로드 (스팸 방지)
+  };
+
+  // 컴포넌트 마운트시 초기 로드
+  useEffect(() => {
     const timeoutId = setTimeout(() => {
       fetchRanking();
-    }, 1000);
+    }, 500); // 500ms로 단축
     
-    return () => {
-      isMounted = false;
-      clearTimeout(timeoutId);
-    };
+    return () => clearTimeout(timeoutId);
   }, []);
 
-  return ranking;
+  // 사용자 로그인/로그아웃시 랭킹 새로고침
+  useEffect(() => {
+    if (user?.id) {
+      console.log('User logged in, refreshing ranking');
+      fetchRanking(true);
+    }
+  }, [user?.id]);
+
+  // 랭킹 새로고침 트리거 감지 (강화 성공 후 등)
+  useEffect(() => {
+    if (rankingRefreshTrigger > 0) {
+      console.log('Ranking refresh triggered:', rankingRefreshTrigger);
+      fetchRanking(true);
+    }
+  }, [rankingRefreshTrigger]);
+
+  // 수동 새로고침 함수도 반환
+  return { ranking, refreshRanking: () => fetchRanking(true), isLoading };
 } 
