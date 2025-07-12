@@ -47,11 +47,11 @@ export function useRealTimeRanking() {
           return;
         }
         
-        // 사용자 정보 별도 조회 (이메일만 필요)
+        // 사용자 정보 별도 조회 (닉네임과 이메일)
         const userIds = rankings.map(r => r.user_id);
         const { data: users, error: userError } = await supabase
           .from("users")
-          .select("id, email")
+          .select("id, email, nickname")
           .in("id", userIds);
         
         if (userError) {
@@ -62,8 +62,10 @@ export function useRealTimeRanking() {
         // 데이터 매핑 및 정렬
         const mapped = rankings.map(ranking => {
           const user = users?.find(u => u.id === ranking.user_id);
+          // 닉네임 우선, 없으면 이메일 앞부분, 그마저 없으면 익명
+          const displayName = user?.nickname || user?.email?.split('@')[0] || "익명";
           return {
-            nickname: user?.email?.split('@')[0] || "익명",
+            nickname: displayName,
             maxLevel: ranking.max_sword_level || 0,
             totalGold: ranking.total_gold || 0,
           };

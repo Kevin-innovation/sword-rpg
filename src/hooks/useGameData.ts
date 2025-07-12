@@ -40,7 +40,7 @@ export function useGameData() {
       let userData = null;
       let { data: existingUser, error: userError } = await supabase
         .from('users')
-        .select('money, fragments')
+        .select('money, fragments, nickname')
         .eq('id', user.id)
         .single();
       
@@ -51,12 +51,14 @@ export function useGameData() {
           .from('users')
           .insert({
             id: user.id,
+            email: user.email,
+            nickname: user.nickname || user.email?.split('@')[0] || '유저',
             money: 30000,
             fragments: 0,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           })
-          .select('money, fragments')
+          .select('money, fragments, nickname')
           .single();
         
         if (createError) throw createError;

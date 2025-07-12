@@ -21,7 +21,7 @@ export default function AuthForm() {
         const { id, email, user_metadata } = session.user;
         setUser({ id, email, nickname: user_metadata?.nickname });
         
-        // users 테이블에 사용자 레코드 생성 (없으면 생성)
+        // users 테이블에 사용자 레코드 생성/업데이트 (닉네임 우선 처리)
         const { error } = await supabase
           .from('users')
           .upsert({
@@ -30,6 +30,9 @@ export default function AuthForm() {
             nickname: user_metadata?.nickname || email?.split('@')[0] || '유저',
             money: 30000,
             fragments: 0
+          }, {
+            onConflict: 'id',
+            ignoreDuplicates: false
           });
         
         // swords 테이블에 기본 검 레코드 생성 (없으면 생성)
@@ -61,7 +64,7 @@ export default function AuthForm() {
       const { id, email, user_metadata } = data.user;
       setUser({ id, email, nickname: user_metadata?.nickname });
       
-      // users 테이블에 사용자 레코드 생성 (없으면 생성)
+      // users 테이블에 사용자 레코드 생성/업데이트 (닉네임 우선 처리)
       await supabase
         .from('users')
         .upsert({
@@ -70,6 +73,9 @@ export default function AuthForm() {
           nickname: user_metadata?.nickname || email?.split('@')[0] || '유저',
           money: 30000,
           fragments: 0
+        }, {
+          onConflict: 'id',
+          ignoreDuplicates: false
         });
       
       // swords 테이블에 기본 검 레코드 생성 (없으면 생성)
@@ -109,7 +115,7 @@ export default function AuthForm() {
       const { id, email, user_metadata } = data.user;
       setUser({ id, email, nickname: user_metadata?.nickname });
       
-      // users 테이블에 사용자 레코드 생성
+      // users 테이블에 사용자 레코드 생성 (닉네임 우선 처리)
       await supabase
         .from('users')
         .upsert({
@@ -118,6 +124,9 @@ export default function AuthForm() {
           nickname: user_metadata?.nickname || nickname,
           money: 30000,
           fragments: 0
+        }, {
+          onConflict: 'id',
+          ignoreDuplicates: false
         });
       
       // swords 테이블에 기본 검 레코드 생성
