@@ -120,19 +120,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   // 7. 업적 업데이트 (백그라운드에서 비동기 처리)
   if (result.success) {
-    supabase
-      .from('user_achievements')
-      .select('unlocked_swords')
-      .eq('user_id', userId)
-      .single()
-      .then(({ data: achievements, error: achievementError }) => {
+    (async () => {
+      try {
+        const { data: achievements, error: achievementError } = await supabase
+          .from('user_achievements')
+          .select('unlocked_swords')
+          .eq('user_id', userId)
+          .single();
+        
         if (!achievementError && achievements) {
           const currentUnlocked = achievements.unlocked_swords || ['0'];
           const newLevelString = result.newLevel.toString();
           
           if (!currentUnlocked.includes(newLevelString)) {
             const updatedUnlocked = [...currentUnlocked, newLevelString];
-            return supabase
+            await supabase
               .from('user_achievements')
               .update({ 
                 unlocked_swords: updatedUnlocked,
@@ -141,7 +143,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               .eq('user_id', userId);
           }
         } else {
-          return supabase
+          await supabase
             .from('user_achievements')
             .insert({
               user_id: userId,
@@ -150,8 +152,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               updated_at: new Date().toISOString(),
             });
         }
-      })
-      .catch(err => console.error('Achievement update error:', err));
+      } catch (err) {
+        console.error('Achievement update error:', err);
+      }
+    })();
   }
 
   // 8. 아이템 사용 처리 (백그라운드에서 비동기 처리)
@@ -175,26 +179,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
   
   // 아이템 처리도 백그라운드에서 비동기 실행 (응답 후)
-  Promise.all(usedItems.map(async (itemType) => {
+  (async () => {
     try {
-      const { data: item } = await supabase
-        .from('items')
-        .select('id')
-        .eq('type', itemType)
-        .single();
-      
-      if (item) {
-        await supabase
-          .from('inventories')
-          .update({ 
-            quantity: supabase.sql`quantity - 1`,
-            updated_at: new Date().toISOString()
-          })
-          .eq('user_id', userId)
-          .eq('item_id', item.id);
-      }
+      await Promise.all(usedItems.map(async (itemType) => {
+        try {
+          const { data: item } = await supabase
+            .from('items')
+            .select('id')
+            .eq('type', itemType)
+            .single();
+          
+          if (item) {
+            await supabase
+              .from('inventories')
+              .update({ 
+                quantity: supabase.sql`quantity - 1`,
+                updated_at: new Date().toISOString()
+              })
+              .eq('user_id', userId)
+              .eq('item_id', item.id);
+          }
+        } catch (err) {
+          console.error(`Item processing error for ${itemType}:`, err);
+        }
+      }));
     } catch (err) {
-      console.error(`Item processing error for ${itemType}:`, err);
+      console.error('Item processing batch error:', err);
     }
-  })).catch(err => console.error('Item processing batch error:', err));
+  })();
 }
