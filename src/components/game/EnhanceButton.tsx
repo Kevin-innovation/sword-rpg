@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useGameState } from "@/store/useGameState";
 import { calculateEnhanceChance, calculateEnhanceCost, calculateFragmentsOnFail, calculateSwordSellPrice } from "@/lib/gameLogic";
 import { useGameData } from "@/hooks/useGameData";
+import { apiRequest } from "@/lib/apiUtils";
 import { motion } from "framer-motion";
 
 export default function EnhanceButton() {
@@ -45,7 +46,7 @@ export default function EnhanceButton() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const handleEnhanceInternal = async (retryCount = 0) => {
+  const handleEnhanceInternal = async () => {
     const now = Date.now();
     
     // 중복 요청 완전 차단 + 50ms 디바운싱으로 단축
@@ -65,32 +66,18 @@ export default function EnhanceButton() {
     }
     
     try {
-      // 타임아웃을 위한 AbortController 추가
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5초 타임아웃으로 단축
-      
-      const res = await fetch("/api/enhance", {
+      const data = await apiRequest("/api/enhance", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body: {
           userId: user.id,
           currentLevel: swordLevel,
           useDoubleChance,
           useProtect,
           useDiscount
-        }),
-        signal: controller.signal
+        },
+        maxRetries: 3,
+        timeout: 8000 // 8초 타임아웃
       });
-      
-      clearTimeout(timeoutId);
-      
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error(`HTTP ${res.status}:`, errorText);
-        throw new Error(`서버 오류 (${res.status})`);
-      }
-      
-      const data = await res.json();
       if (data.error) {
         console.error('API Error:', data.error);
         alert(`오류: ${data.error}`);
@@ -141,23 +128,15 @@ export default function EnhanceButton() {
     } catch (e) {
       console.error("강화 오류:", e);
       
-      // AbortError나 네트워크 오류일 경우 재시도 (최대 2회)
-      const isNetworkError = e instanceof TypeError || 
-                            e.message.includes('fetch') || 
-                            e.message.includes('aborted') ||
-                            e.name === 'AbortError';
-      
-      if (retryCount < 2 && isNetworkError) {
-        console.log(`재시도 중... (${retryCount + 1}/2)`);
-        setTimeout(() => handleEnhanceInternal(retryCount + 1), 1000);
-        return;
-      }
-      
       let errorMessage = "통신 오류가 발생했습니다";
-      if (e.message.includes('aborted')) {
+      if (e.message.includes('timeout') || e.message.includes('aborted')) {
         errorMessage = "서버 응답 시간 초과";
-      } else if (e.message.includes('fetch')) {
+      } else if (e.message.includes('network') || e.message.includes('fetch')) {
         errorMessage = "네트워크 연결 오류";
+      } else if (e.message.includes('Client error')) {
+        errorMessage = "요청 오류가 발생했습니다";
+      } else if (e.message.includes('Server error')) {
+        errorMessage = "서버 오류가 발생했습니다";
       }
       
       alert(errorMessage);
@@ -174,7 +153,7 @@ export default function EnhanceButton() {
   };
 
   const handleEnhance = () => {
-    handleEnhanceInternal(0);
+    handleEnhanceInternal();
   };
 
   const sellPrice = calculateSwordSellPrice(swordLevel);
@@ -194,20 +173,15 @@ export default function EnhanceButton() {
     setIsSelling(true);
     
     try {
-      const response = await fetch('/api/sell', {
+      const data = await apiRequest('/api/sell', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: {
           userId: user.id,
           swordLevel: swordLevel
-        })
+        },
+        maxRetries: 2,
+        timeout: 5000
       });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || '판매 실패');
-      }
       
       // 상태 업데이트
       setMoney(data.newMoney);

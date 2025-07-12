@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useGameState } from "@/store/useGameState";
 import { ORDER_COST } from "@/lib/gameLogic";
+import { apiRequest } from "@/lib/apiUtils";
 
 const initialItems = [
   {
@@ -50,21 +51,16 @@ const Shop = () => {
     setPurchasing(id);
     
     try {
-      const response = await fetch('/api/shop', {
+      const data = await apiRequest('/api/shop', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: {
           userId: user.id,
           itemType: id,
           price: price
-        })
+        },
+        maxRetries: 2,
+        timeout: 5000
       });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || '구매 실패');
-      }
       
       // 상태 업데이트
       setMoney(data.newMoney);
