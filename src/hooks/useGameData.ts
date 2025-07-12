@@ -5,7 +5,7 @@ import { useGameState } from "@/store/useGameState";
 // Global protection against duplicate loads
 const activeLoads = new Set<string>();
 const lastLoadTime = new Map<string, number>();
-const LOAD_COOLDOWN = 5000; // 5초 쿨다운
+const LOAD_COOLDOWN = 1000; // 1초 쿨다운으로 단축
 
 export function useGameData() {
   const { user, setMoney, setSwordLevel, setFragments, setItems, loadUserAchievements } = useGameState();
@@ -185,10 +185,13 @@ export function useGameData() {
   // 사용자 변경시 데이터 로드 (디바운싱 적용)
   useEffect(() => {
     if (user?.id) {
-      // 500ms 디바운싱으로 중복 호출 방지
+      // 새로고침/페이지 로드 시 즉시 로드, 그 외엔 200ms 디바운싱
+      const isInitialLoad = !lastLoadTime.has(user.id);
+      const delay = isInitialLoad ? 0 : 200;
+      
       const timeoutId = setTimeout(() => {
         loadUserData();
-      }, 500);
+      }, delay);
       
       return () => clearTimeout(timeoutId);
     }

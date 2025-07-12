@@ -22,22 +22,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'Invalid parameters' });
   }
 
-  // 2. 유저 정보 조회
-  const { data: user, error: userError } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', userId)
-    .single();
+  // 2. 유저 및 검 정보 병렬 조회 (성능 개선)
+  const [userResult, swordResult] = await Promise.all([
+    supabase.from('users').select('*').eq('id', userId).single(),
+    supabase.from('swords').select('*').eq('user_id', userId).single()
+  ]);
+
+  const { data: user, error: userError } = userResult;
+  const { data: sword, error: swordError } = swordResult;
+
   if (userError || !user) {
     return res.status(404).json({ error: 'User not found' });
   }
-
-  // 3. 검 정보 조회
-  const { data: sword, error: swordError } = await supabase
-    .from('swords')
-    .select('*')
-    .eq('user_id', userId)
-    .single();
   if (swordError || !sword) {
     return res.status(404).json({ error: 'Sword not found' });
   }
@@ -48,37 +44,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (useProtect) usedItems.push('protect');
   if (useDiscount) usedItems.push('discount');
   
-  // 아이템 보유 수량 확인
-  for (const itemType of usedItems) {
-    const { data: item } = await supabase
+  // 아이템 보유 수량 확인 (병렬 처리로 성능 개선)
+  if (usedItems.length > 0) {
+    // 모든 아이템 정보를 한 번에 조회
+    const { data: items } = await supabase
       .from('items')
-      .select('id')
-      .eq('type', itemType)
-      .single();
+      .select('id, type')
+      .in('type', usedItems);
     
-    if (item) {
-      const { data: inventory } = await supabase
-        .from('inventories')
-        .select('quantity')
-        .eq('user_id', userId)
-        .eq('item_id', item.id)
-        .single();
-      
+    if (!items || items.length !== usedItems.length) {
+      return res.status(400).json({ error: '일부 아이템을 찾을 수 없습니다' });
+    }
+    
+    // 인벤토리 정보를 병렬로 조회
+    const itemIds = items.map(item => item.id);
+    const { data: inventories } = await supabase
+      .from('inventories')
+      .select('item_id, quantity')
+      .eq('user_id', userId)
+      .in('item_id', itemIds);
+    
+    // 아이템 보유 확인
+    for (const item of items) {
+      const inventory = inventories?.find(inv => inv.item_id === item.id);
       if (!inventory || inventory.quantity <= 0) {
-        console.log(`Item check failed for ${itemType}:`, {
-          userId,
-          itemType,
-          itemId: item.id,
-          inventory: inventory,
-          quantity: inventory?.quantity || 0
-        });
         return res.status(400).json({ 
-          error: `부족한 아이템: ${itemType}`, 
+          error: `부족한 아이템: ${item.type}`, 
           details: `현재 보유량: ${inventory?.quantity || 0}개`
         });
       }
-    } else {
-      return res.status(400).json({ error: `아이템을 찾을 수 없음: ${itemType}` });
     }
   }
   

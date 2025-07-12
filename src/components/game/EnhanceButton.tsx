@@ -48,8 +48,8 @@ export default function EnhanceButton() {
   const handleEnhanceInternal = async (retryCount = 0) => {
     const now = Date.now();
     
-    // 중복 요청 완전 차단 + 100ms 디바운싱
-    if (disabled || isProcessing || (now - lastClickTime < 100)) return;
+    // 중복 요청 완전 차단 + 50ms 디바운싱으로 단축
+    if (disabled || isProcessing || (now - lastClickTime < 50)) return;
     
     setLastClickTime(now);
     setIsProcessing(true);
@@ -67,7 +67,7 @@ export default function EnhanceButton() {
     try {
       // 타임아웃을 위한 AbortController 추가
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15초 타임아웃으로 증가
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5초 타임아웃으로 단축
       
       const res = await fetch("/api/enhance", {
         method: "POST",
@@ -166,11 +166,11 @@ export default function EnhanceButton() {
       setIsProcessing(false);
     }
     
-    // 애니메이션만 150ms 후 종료 (극도로 빠른 반응)
+    // 애니메이션만 100ms 후 종료 (극도로 빠른 반응)
     setTimeout(() => {
       setAnim(false);
       setResult(null);
-    }, 150);
+    }, 100);
   };
 
   const handleEnhance = () => {
