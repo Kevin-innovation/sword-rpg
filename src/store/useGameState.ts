@@ -31,7 +31,7 @@ export type GameState = {
   loadUserAchievements: (userId: string) => Promise<void>;
 };
 
-export const useGameState = create<GameState>((set) => ({
+export const useGameState = create<GameState>((set, get) => ({
   user: null,
   money: 30000,
   swordLevel: 0,
