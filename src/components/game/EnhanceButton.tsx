@@ -42,8 +42,6 @@ export default function EnhanceButton() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const user = useGameState((s) => s.user);
-
   const handleEnhance = async () => {
     if (disabled) return;
     setDisabled(true);
