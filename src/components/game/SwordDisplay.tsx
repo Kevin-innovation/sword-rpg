@@ -95,7 +95,7 @@ export default function SwordDisplay() {
         <div className="relative mb-4">
           <div className={`select-none transition-all duration-500 ${getSwordStyle()}`}>
             <img 
-              src={`/images/swords/${Math.min(swordLevel + 1, 7)}.png`} 
+              src={`/images/swords/${Math.min(swordLevel + 1, 10)}.png`} 
               alt={swordNames[swordLevel] || "미지의 검"} 
               className="w-24 h-24 sm:w-32 sm:h-32 object-contain mx-auto drop-shadow-lg"
               onError={(e) => {
