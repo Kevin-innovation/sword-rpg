@@ -22,6 +22,12 @@ export async function fetchWithRetry(
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeout);
 
+      console.log(`API Request ${attempt + 1}/${maxRetries + 1}:`, {
+        url,
+        method: fetchOptions.method,
+        headers: fetchOptions.headers
+      });
+
       const response = await fetch(url, {
         ...fetchOptions,
         signal: controller.signal,
@@ -71,10 +77,13 @@ export async function apiRequest<T = any>(
   url: string,
   options: Omit<FetchOptions, 'body'> & { body?: any } = {}
 ): Promise<T> {
-  const { body, ...fetchOptions } = options;
+  const { body, maxRetries, retryDelay, timeout, ...fetchOptions } = options;
 
   const response = await fetchWithRetry(url, {
     ...fetchOptions,
+    maxRetries,
+    retryDelay,
+    timeout,
     headers: {
       'Content-Type': 'application/json',
       ...fetchOptions.headers,

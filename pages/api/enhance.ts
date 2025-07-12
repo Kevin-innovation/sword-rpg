@@ -5,16 +5,25 @@ import { supabase } from '../../lib/supabase';
 import type { User, Sword } from '../../lib/types';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  console.log('Enhance API called:', {
+    method: req.method,
+    url: req.url,
+    headers: req.headers,
+    body: req.body
+  });
+
   // CORS 처리
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
+    console.log('OPTIONS request handled');
     return res.status(200).end();
   }
 
   if (req.method !== 'POST') {
+    console.log('Method not allowed:', req.method);
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
