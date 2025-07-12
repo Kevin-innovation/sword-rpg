@@ -16,6 +16,18 @@ const Inventory = () => {
   const setMoney = useGameState((s) => s.setMoney);
   const user = useGameState((s) => s.user);
   const setItems = useGameState((s) => s.setItems);
+  const loadUserAchievements = useGameState((s) => s.loadUserAchievements);
+
+  // 사용자 변경시 업적 데이터 새로고침
+  useEffect(() => {
+    if (user?.id) {
+      console.log('인벤토리: 사용자 변경 감지, 업적 로드 시작:', user.id);
+      // 지연 시간을 짧게 하여 빠른 동기화
+      setTimeout(() => {
+        loadUserAchievements(user.id);
+      }, 100);
+    }
+  }, [user?.id, loadUserAchievements]);
 
   useEffect(() => {
     const fetchInventory = async () => {
@@ -63,6 +75,17 @@ const Inventory = () => {
         <h2 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
           검 업적 컬렉션
         </h2>
+      </div>
+      <div className="mb-4 flex justify-between items-center">
+        <span className="text-sm text-slate-600">
+          해금된 검: {foundSwords.filter(found => found).length} / {foundSwords.length}
+        </span>
+        <button
+          onClick={() => user?.id && loadUserAchievements(user.id)}
+          className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+        >
+          새로고침
+        </button>
       </div>
       <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-7 gap-3 md:gap-4">
         {foundSwords.map((found, i) => (

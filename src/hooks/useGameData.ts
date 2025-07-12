@@ -103,12 +103,10 @@ export function useGameData() {
         setSwordLevel(swordData.level || 0);
       }
       
-      // 업적 정보 로드 (쿨다운 적용)
-      if (!lastLoadTime.has(`achievements-${user.id}`) || 
-          (now - (lastLoadTime.get(`achievements-${user.id}`) || 0)) > LOAD_COOLDOWN) {
-        lastLoadTime.set(`achievements-${user.id}`, now);
-        await loadUserAchievements(user.id);
-      }
+      // 업적 정보 로드 (사용자 변경시 강제 새로고침)
+      console.log('사용자 데이터 로드 중 업적 로드:', user.id);
+      lastLoadTime.set(`achievements-${user.id}`, now);
+      await loadUserAchievements(user.id);
       
       // 아이템 정보 가져오기 (추후 구현)
       // const { data: itemData } = await supabase

@@ -35,7 +35,7 @@ export type GameState = {
 
 // Global cache to prevent duplicate achievement loads
 const achievementCache = new Map<string, { data: boolean[], timestamp: number }>();
-const CACHE_DURATION = 30000; // 30초 캐시
+const CACHE_DURATION = 5000; // 5초로 단축 (더 빠른 동기화)
 const activeRequests = new Set<string>();
 
 export const useGameState = create<GameState>((set, get) => ({
@@ -86,14 +86,19 @@ export const useGameState = create<GameState>((set, get) => ({
       return;
     }
     
-    // 캐시 확인 (30초 이내 데이터가 있으면 사용)
+    // 캐시 확인 (5초 이내 데이터가 있으면 사용, 단 사용자 변경시는 무시)
     const cached = achievementCache.get(userId);
     const now = Date.now();
-    if (cached && (now - cached.timestamp) < CACHE_DURATION) {
+    const isFromUserChange = !lastLoadTime.has(`user-${userId}`) || (now - (lastLoadTime.get(`user-${userId}`) || 0)) < 2000;
+    
+    if (cached && (now - cached.timestamp) < CACHE_DURATION && !isFromUserChange) {
       console.log('Using cached achievement data for user:', userId);
       set({ foundSwords: cached.data });
       return;
     }
+    
+    // 사용자 로드 시간 기록
+    lastLoadTime.set(`user-${userId}`, now);
     
     activeRequests.add(userId);
     set({ isLoadingAchievements: true });
