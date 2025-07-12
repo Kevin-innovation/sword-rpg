@@ -2,6 +2,11 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
+// Global protection against spam requests
+let isGloballyLoading = false;
+let lastFetchTime = 0;
+const FETCH_COOLDOWN = 10000; // 10초 쿨다운
+
 export type RankingEntry = {
   nickname: string;
   maxLevel: number;
@@ -17,8 +22,17 @@ export function useRealTimeRanking() {
     let isMounted = true;
     
     const fetchRanking = async () => {
-      if (isLoading) return; // 이미 로딩 중이면 중단
+      if (isLoading || isGloballyLoading) return; // 로딩 중이면 중단
       
+      // 쿨다운 체크
+      const now = Date.now();
+      if (now - lastFetchTime < FETCH_COOLDOWN) {
+        console.log('Ranking fetch cooldown active');
+        return;
+      }
+      
+      isGloballyLoading = true;
+      lastFetchTime = now;
       setIsLoading(true);
       try {
         // rankings 테이블에서 최고 레벨 기록 조회
@@ -72,13 +86,18 @@ export function useRealTimeRanking() {
         if (isMounted) {
           setIsLoading(false);
         }
+        isGloballyLoading = false;
       }
     };
     
-    fetchRanking();
+    // 1초 지연 후 랭킹 로드 (스팸 방지)
+    const timeoutId = setTimeout(() => {
+      fetchRanking();
+    }, 1000);
     
     return () => {
       isMounted = false;
+      clearTimeout(timeoutId);
     };
   }, []);
 

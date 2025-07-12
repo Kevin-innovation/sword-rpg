@@ -31,6 +31,11 @@ export type GameState = {
   loadUserAchievements: (userId: string) => Promise<void>;
 };
 
+// Global cache to prevent duplicate achievement loads
+const achievementCache = new Map<string, { data: boolean[], timestamp: number }>();
+const CACHE_DURATION = 30000; // 30초 캐시
+const activeRequests = new Set<string>();
+
 export const useGameState = create<GameState>((set, get) => ({
   user: null,
   money: 30000,
@@ -72,9 +77,26 @@ export const useGameState = create<GameState>((set, get) => ({
     const { isLoadingAchievements } = get();
     if (isLoadingAchievements) return; // 이미 로딩 중이면 중단
     
+    // 중복 요청 완전 차단
+    if (activeRequests.has(userId)) {
+      console.log('Achievement request already active for user:', userId);
+      return;
+    }
+    
+    // 캐시 확인 (30초 이내 데이터가 있으면 사용)
+    const cached = achievementCache.get(userId);
+    const now = Date.now();
+    if (cached && (now - cached.timestamp) < CACHE_DURATION) {
+      console.log('Using cached achievement data for user:', userId);
+      set({ foundSwords: cached.data });
+      return;
+    }
+    
+    activeRequests.add(userId);
     set({ isLoadingAchievements: true });
     
     try {
+      console.log('Loading fresh achievement data for user:', userId);
       const { data, error } = await supabase
         .from('user_achievements')
         .select('unlocked_swords')
@@ -91,11 +113,25 @@ export const useGameState = create<GameState>((set, get) => ({
             foundSwords[levelNum] = true;
           }
         });
+        
+        // 캐시에 저장
+        achievementCache.set(userId, { data: foundSwords, timestamp: now });
         set({ foundSwords });
+      } else if (error?.code === 'PGRST116') {
+        // 데이터가 없으면 기본값 설정 (에러 무시)
+        const defaultSwords = Array(21).fill(false);
+        defaultSwords[0] = true;
+        achievementCache.set(userId, { data: defaultSwords, timestamp: now });
+        set({ foundSwords: defaultSwords });
       }
     } catch (err) {
       console.error('Failed to load achievements:', err);
+      // 에러 발생시 기본값 설정
+      const defaultSwords = Array(21).fill(false);
+      defaultSwords[0] = true;
+      set({ foundSwords: defaultSwords });
     } finally {
+      activeRequests.delete(userId);
       set({ isLoadingAchievements: false });
     }
   },

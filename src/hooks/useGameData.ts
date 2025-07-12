@@ -2,6 +2,11 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useGameState } from "@/store/useGameState";
 
+// Global protection against duplicate loads
+const activeLoads = new Set<string>();
+const lastLoadTime = new Map<string, number>();
+const LOAD_COOLDOWN = 5000; // 5초 쿨다운
+
 export function useGameData() {
   const { user, setMoney, setSwordLevel, setFragments, setItems, loadUserAchievements } = useGameState();
   const [loading, setLoading] = useState(false);
@@ -11,6 +16,22 @@ export function useGameData() {
   const loadUserData = async () => {
     if (!user?.id || loading) return; // 이미 로딩 중이면 중단
     
+    // 중복 로드 완전 차단
+    if (activeLoads.has(user.id)) {
+      console.log('Data load already active for user:', user.id);
+      return;
+    }
+    
+    // 쿨다운 체크
+    const lastLoad = lastLoadTime.get(user.id);
+    const now = Date.now();
+    if (lastLoad && (now - lastLoad) < LOAD_COOLDOWN) {
+      console.log('Data load cooldown active for user:', user.id);
+      return;
+    }
+    
+    activeLoads.add(user.id);
+    lastLoadTime.set(user.id, now);
     setLoading(true);
     setError(null);
     
@@ -82,8 +103,12 @@ export function useGameData() {
         setSwordLevel(swordData.level || 0);
       }
       
-      // 업적 정보 로드
-      await loadUserAchievements(user.id);
+      // 업적 정보 로드 (쿨다운 적용)
+      if (!lastLoadTime.has(`achievements-${user.id}`) || 
+          (now - (lastLoadTime.get(`achievements-${user.id}`) || 0)) > LOAD_COOLDOWN) {
+        lastLoadTime.set(`achievements-${user.id}`, now);
+        await loadUserAchievements(user.id);
+      }
       
       // 아이템 정보 가져오기 (추후 구현)
       // const { data: itemData } = await supabase
@@ -95,6 +120,7 @@ export function useGameData() {
       console.error('게임 데이터 로드 오류:', err);
       setError('게임 데이터를 불러오는 중 오류가 발생했습니다.');
     } finally {
+      activeLoads.delete(user.id);
       setLoading(false);
     }
   };
@@ -151,10 +177,15 @@ export function useGameData() {
     }
   };
 
-  // 사용자 변경시 데이터 로드
+  // 사용자 변경시 데이터 로드 (디바운싱 적용)
   useEffect(() => {
     if (user?.id) {
-      loadUserData();
+      // 500ms 디바운싱으로 중복 호출 방지
+      const timeoutId = setTimeout(() => {
+        loadUserData();
+      }, 500);
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [user?.id]);
 
