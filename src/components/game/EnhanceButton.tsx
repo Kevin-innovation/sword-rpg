@@ -14,6 +14,10 @@ export default function EnhanceButton() {
   const [isProcessing, setIsProcessing] = useState(false); // 중복 요청 방지
   const [lastClickTime, setLastClickTime] = useState(0); // 디바운싱용
   const [isSelling, setIsSelling] = useState(false); // 판매 중 상태
+  // 강화 게이지 애니메이션 상태
+  const [showGauge, setShowGauge] = useState(false);
+  const [gaugeProgress, setGaugeProgress] = useState(0);
+  const [gaugeResult, setGaugeResult] = useState<'success' | 'fail' | null>(null);
   const items = useGameState((s) => s.items);
   const setItems = useGameState((s) => s.setItems);
   const foundSwords = useGameState((s) => s.foundSwords);
@@ -66,6 +70,22 @@ export default function EnhanceButton() {
       setIsProcessing(false);
       return;
     }
+
+    // 강화 게이지 애니메이션 시작
+    setShowGauge(true);
+    setGaugeProgress(0);
+    setGaugeResult(null);
+    
+    // 게이지가 천천히 올라가는 애니메이션 (1.5초)
+    const gaugeInterval = setInterval(() => {
+      setGaugeProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(gaugeInterval);
+          return 100;
+        }
+        return prev + 2; // 50번에 걸쳐 100%까지
+      });
+    }, 30); // 30ms마다 업데이트
     
     try {
       const response = await fetch("/api/enhance", {
@@ -96,27 +116,37 @@ export default function EnhanceButton() {
         return;
       }
       
-      // 서버 응답에 따라 상태 갱신
+      // 게이지 애니메이션 결과 표시
       if (data.success) {
-        setSwordLevel(data.newLevel);
-        setResult("success");
-        // 성공시 업적 실시간 업데이트
-        if (user?.id) {
-          loadUserAchievements(user.id);
-        }
-        // 성공시 랭킹 새로고침 트리거
-        refreshRanking();
-        // 성공시 알림창 제거 - 시각적 효과만 표시
+        setGaugeResult('success');
+        // 성공 시 게이지 완료 후 결과 처리
+        setTimeout(() => {
+          setSwordLevel(data.newLevel);
+          setResult("success");
+          // 성공시 업적 실시간 업데이트
+          if (user?.id) {
+            loadUserAchievements(user.id);
+          }
+          // 성공시 랭킹 새로고침 트리거
+          refreshRanking();
+        }, 500);
       } else {
-        setSwordLevel(data.newLevel);
-        setResult("fail");
-        // 실패시 조각 업데이트
-        if (data.fragmentsGained > 0) {
-          setFragments(data.newFragments);
-          alert(`강화 실패! 레벨 0으로 초기화되었지만 조각 ${data.fragmentsGained}개를 획득했습니다.`);
-        } else {
-          alert("강화 실패! 레벨 0으로 초기화");
-        }
+        setGaugeResult('fail');
+        // 실패 시 게이지가 급락한 후 결과 처리
+        setTimeout(() => {
+          setGaugeProgress(0); // 게이지 급락
+        }, 200);
+        setTimeout(() => {
+          setSwordLevel(data.newLevel);
+          setResult("fail");
+          // 실패시 조각 업데이트
+          if (data.fragmentsGained > 0) {
+            setFragments(data.newFragments);
+            alert(`강화 실패! 레벨 0으로 초기화되었지만 조각 ${data.fragmentsGained}개를 획득했습니다.`);
+          } else {
+            alert("강화 실패! 레벨 0으로 초기화");
+          }
+        }, 700);
       }
       
       // 돈과 조각 상태 업데이트
@@ -158,11 +188,14 @@ export default function EnhanceButton() {
       setIsProcessing(false);
     }
     
-    // 애니메이션만 100ms 후 종료 (극도로 빠른 반응)
+    // 게이지 애니메이션과 기존 애니메이션 종료 처리
     setTimeout(() => {
+      setShowGauge(false);
+      setGaugeProgress(0);
+      setGaugeResult(null);
       setAnim(false);
       setResult(null);
-    }, 100);
+    }, 2000); // 게이지 애니메이션이 완료된 후 정리
   };
 
   const handleEnhance = () => {
@@ -240,6 +273,31 @@ export default function EnhanceButton() {
       </div>
 
       <div className="w-full flex flex-col gap-2 md:gap-3">
+        {/* 강화 게이지 애니메이션 */}
+        {showGauge && (
+          <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden relative">
+            <div 
+              className={`h-full transition-all duration-200 rounded-full ${
+                gaugeResult === 'success' 
+                  ? 'bg-gradient-to-r from-green-400 to-green-600' 
+                  : gaugeResult === 'fail'
+                    ? 'bg-gradient-to-r from-red-400 to-red-600'
+                    : 'bg-gradient-to-r from-blue-400 to-purple-600'
+              }`}
+              style={{ width: `${gaugeProgress}%` }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-xs font-bold text-white drop-shadow">
+                {gaugeResult === 'success' ? '성공!' : gaugeResult === 'fail' ? '실패!' : '강화 중...'}
+              </span>
+            </div>
+            {/* 반짝이는 효과 */}
+            {gaugeProgress > 0 && gaugeResult === null && (
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
+            )}
+          </div>
+        )}
+        
         <motion.button
           whileTap={{ scale: 0.95 }}
           whileHover={{ scale: 1.02 }}

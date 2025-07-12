@@ -40,7 +40,7 @@ export function useRealTimeRanking() {
           .select("user_id, max_sword_level, total_gold")
           .order("max_sword_level", { ascending: false })
           .order("total_gold", { ascending: false })
-          .limit(10);
+          .limit(5);
         
         if (rankingError || !rankings) {
           console.error("Ranking fetch error:", rankingError);
@@ -86,13 +86,21 @@ export function useRealTimeRanking() {
       }
   };
 
-  // 컴포넌트 마운트시 초기 로드
+  // 컴포넌트 마운트시 초기 로드 및 자동 새로고침
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       fetchRanking();
     }, 500); // 500ms로 단축
     
-    return () => clearTimeout(timeoutId);
+    // 30초마다 자동 새로고침
+    const intervalId = setInterval(() => {
+      fetchRanking();
+    }, 30000);
+    
+    return () => {
+      clearTimeout(timeoutId);
+      clearInterval(intervalId);
+    };
   }, []);
 
   // 사용자 로그인/로그아웃시 랭킹 새로고침
