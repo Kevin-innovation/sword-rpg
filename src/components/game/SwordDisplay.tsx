@@ -32,28 +32,49 @@ export default function SwordDisplay() {
     prevLevel.current = swordLevel;
   }, [swordLevel, controls]);
 
-  // 강화 단계에 따른 검 색상과 효과
+  // 강화 단계에 따른 검 색상과 효과 (10단계 세분화)
   const getSwordStyle = () => {
-    if (swordLevel >= 15) return "hue-rotate-270 drop-shadow-lg"; // 보라색 - 전설
-    if (swordLevel >= 10) return "hue-rotate-180 drop-shadow-lg"; // 파란색 - 영웅
-    if (swordLevel >= 5) return "hue-rotate-90 drop-shadow-md"; // 녹색 - 레어
-    if (swordLevel >= 1) return "hue-rotate-45 drop-shadow-sm"; // 주황색 - 일반
+    if (swordLevel >= 20) return "hue-rotate-300 saturate-200 brightness-125 drop-shadow-2xl contrast-125"; // 무지개빛 - 신화
+    if (swordLevel >= 18) return "hue-rotate-270 saturate-150 brightness-110 drop-shadow-2xl contrast-110"; // 보라색 - 전설
+    if (swordLevel >= 16) return "hue-rotate-240 saturate-150 brightness-110 drop-shadow-xl contrast-110"; // 진보라 - 고대
+    if (swordLevel >= 14) return "hue-rotate-200 saturate-125 brightness-105 drop-shadow-xl contrast-105"; // 인디고 - 마스터
+    if (swordLevel >= 12) return "hue-rotate-180 saturate-125 brightness-105 drop-shadow-lg contrast-105"; // 파란색 - 영웅
+    if (swordLevel >= 10) return "hue-rotate-160 saturate-110 brightness-105 drop-shadow-lg"; // 하늘색 - 엘리트
+    if (swordLevel >= 8) return "hue-rotate-120 saturate-110 brightness-105 drop-shadow-md"; // 에메랄드 - 상급
+    if (swordLevel >= 6) return "hue-rotate-90 saturate-110 brightness-105 drop-shadow-md"; // 녹색 - 레어
+    if (swordLevel >= 4) return "hue-rotate-60 saturate-110 brightness-105 drop-shadow-sm"; // 연두색 - 고급
+    if (swordLevel >= 2) return "hue-rotate-30 saturate-110 brightness-105 drop-shadow-sm"; // 주황색 - 일반
+    if (swordLevel >= 1) return "hue-rotate-15 saturate-105 brightness-102"; // 연주황 - 초급
     return ""; // 기본 색상
   };
 
   const getLevelColor = () => {
-    if (swordLevel >= 15) return "text-purple-600 drop-shadow-lg";
-    if (swordLevel >= 10) return "text-blue-600 drop-shadow-lg";
-    if (swordLevel >= 5) return "text-green-600 drop-shadow-md";
-    if (swordLevel >= 1) return "text-orange-600 drop-shadow-sm";
+    if (swordLevel >= 20) return "text-transparent bg-gradient-to-r from-purple-500 via-pink-500 via-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 bg-clip-text animate-pulse drop-shadow-2xl";
+    if (swordLevel >= 18) return "text-purple-600 drop-shadow-2xl animate-pulse";
+    if (swordLevel >= 16) return "text-violet-600 drop-shadow-xl";
+    if (swordLevel >= 14) return "text-indigo-600 drop-shadow-xl";
+    if (swordLevel >= 12) return "text-blue-600 drop-shadow-lg";
+    if (swordLevel >= 10) return "text-sky-600 drop-shadow-lg";
+    if (swordLevel >= 8) return "text-emerald-600 drop-shadow-md";
+    if (swordLevel >= 6) return "text-green-600 drop-shadow-md";
+    if (swordLevel >= 4) return "text-lime-600 drop-shadow-sm";
+    if (swordLevel >= 2) return "text-orange-600 drop-shadow-sm";
+    if (swordLevel >= 1) return "text-amber-600";
     return "text-gray-600";
   };
 
   const getBackgroundGlow = () => {
-    if (swordLevel >= 15) return "bg-purple-500/20";
-    if (swordLevel >= 10) return "bg-blue-500/20";
-    if (swordLevel >= 5) return "bg-green-500/20";
-    if (swordLevel >= 1) return "bg-orange-500/20";
+    if (swordLevel >= 20) return "bg-gradient-to-r from-purple-500/30 via-pink-500/30 via-red-500/30 via-yellow-500/30 via-green-500/30 via-blue-500/30 to-purple-500/30";
+    if (swordLevel >= 18) return "bg-purple-500/30";
+    if (swordLevel >= 16) return "bg-violet-500/25";
+    if (swordLevel >= 14) return "bg-indigo-500/25";
+    if (swordLevel >= 12) return "bg-blue-500/25";
+    if (swordLevel >= 10) return "bg-sky-500/20";
+    if (swordLevel >= 8) return "bg-emerald-500/20";
+    if (swordLevel >= 6) return "bg-green-500/20";
+    if (swordLevel >= 4) return "bg-lime-500/15";
+    if (swordLevel >= 2) return "bg-orange-500/15";
+    if (swordLevel >= 1) return "bg-amber-500/15";
     return "bg-gray-500/10";
   };
 
@@ -93,6 +114,24 @@ export default function SwordDisplay() {
       >
         {/* 검 이미지 */}
         <div className="relative mb-4">
+          {/* 고급 레벨에서 추가 오라 효과 */}
+          {swordLevel >= 15 && (
+            <div className="absolute -inset-8 pointer-events-none">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={`aura-${i}`}
+                  className={`absolute w-full h-full rounded-full border-2 animate-ping ${
+                    swordLevel >= 20 ? 'border-purple-400/20' :
+                    'border-purple-500/30'
+                  }`}
+                  style={{
+                    animationDelay: `${i * 0.5}s`,
+                    animationDuration: '2s'
+                  }}
+                ></div>
+              ))}
+            </div>
+          )}
           <div className={`select-none transition-all duration-500 ${getSwordStyle()}`}>
             <img 
               src={`/images/swords/${Math.min(swordLevel + 1, 10)}.png`} 
@@ -146,14 +185,32 @@ export default function SwordDisplay() {
           )}
         </div>
         
-        {/* 강화 단계 진행바 */}
-        <div className="mt-3 w-32 bg-gray-200 rounded-full h-2 overflow-hidden">
+        {/* 강화 단계 진행바 - 더 화려하게 */}
+        <div className="mt-3 w-40 bg-gray-800 rounded-full h-3 overflow-hidden relative shadow-lg">
           <div 
-            className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500 rounded-full"
-            style={{ width: `${(swordLevel % 5) * 20 + 20}%` }}
-          ></div>
+            className={`h-full transition-all duration-500 rounded-full relative overflow-hidden ${
+              swordLevel >= 18 ? 'bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600' :
+              swordLevel >= 15 ? 'bg-gradient-to-r from-purple-500 to-violet-600' :
+              swordLevel >= 10 ? 'bg-gradient-to-r from-blue-500 to-indigo-600' :
+              swordLevel >= 5 ? 'bg-gradient-to-r from-green-500 to-emerald-600' :
+              'bg-gradient-to-r from-orange-500 to-red-500'
+            }`}
+            style={{ width: `${Math.min((swordLevel % 5) * 20 + 20, 100)}%` }}
+          >
+            {/* 빛나는 효과 */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
+          </div>
+          {/* 반짝이는 효과 */}
+          {swordLevel >= 10 && (
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-ping"></div>
+          )}
         </div>
-        <div className="text-xs text-gray-500 mt-1">
+        <div className={`text-xs mt-1 font-semibold ${
+          swordLevel >= 15 ? 'text-purple-400' :
+          swordLevel >= 10 ? 'text-blue-400' :
+          swordLevel >= 5 ? 'text-green-400' :
+          'text-orange-400'
+        }`}>
           {swordLevel % 5 + 1}/5 단계
         </div>
       </motion.div>
