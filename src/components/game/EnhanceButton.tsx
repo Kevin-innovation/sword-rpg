@@ -64,6 +64,7 @@ export default function EnhanceButton() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: user.id,
+          currentLevel: swordLevel,
           useDoubleChance,
           useProtect,
           useDiscount
