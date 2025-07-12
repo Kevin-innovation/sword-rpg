@@ -77,9 +77,7 @@ export function useRealTimeRanking() {
           return b.totalGold - a.totalGold;
         });
         
-        if (isMounted) {
-          setRanking(mapped);
-        }
+        setRanking(mapped);
       } catch (err) {
         console.error("Ranking error:", err);
       } finally {
