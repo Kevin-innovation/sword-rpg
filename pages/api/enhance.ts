@@ -88,7 +88,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     .select('*')
     .eq('user_id', userId)
     .single();
-  const newMaxLevel = Math.max(result.newLevel, ranking?.max_sword_level || 0);
+  // 강화 시도 전 레벨과 비교하여 최고 기록 갱신
+  const levelToCompare = result.success ? result.newLevel : currentLevel;
+  const newMaxLevel = Math.max(levelToCompare, ranking?.max_sword_level || 0);
   const newTotalGold = user.money - enhanceCost;
   if (ranking) {
     await supabase.from('rankings').update({
