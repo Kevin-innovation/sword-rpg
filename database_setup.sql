@@ -1,5 +1,6 @@
--- Supabase 데이터베이스 테이블 생성 스크립트
--- 이 스크립트를 Supabase SQL Editor에서 실행하세요
+-- 1단계: Supabase 데이터베이스 테이블 생성 스크립트
+-- 이 스크립트를 Supabase SQL Editor에서 가장 먼저 실행하세요
+-- 실행 후 02_disable_rls.sql을 실행하세요
 
 -- 1. users 테이블 생성
 CREATE TABLE IF NOT EXISTS users (
