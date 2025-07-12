@@ -65,7 +65,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .single();
       
       if (!inventory || inventory.quantity <= 0) {
-        return res.status(400).json({ error: `부족한 아이템: ${itemType}` });
+        console.log(`Item check failed for ${itemType}:`, {
+          userId,
+          itemType,
+          itemId: item.id,
+          inventory: inventory,
+          quantity: inventory?.quantity || 0
+        });
+        return res.status(400).json({ 
+          error: `부족한 아이템: ${itemType}`, 
+          details: `현재 보유량: ${inventory?.quantity || 0}개`
+        });
       }
     } else {
       return res.status(400).json({ error: `아이템을 찾을 수 없음: ${itemType}` });
