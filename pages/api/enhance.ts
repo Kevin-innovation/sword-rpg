@@ -108,43 +108,53 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
 
-  // 7. 업적 업데이트 (강화 성공 시 새로운 검 레벨 잠금 해제)
+  // 먼저 클라이언트에 응답을 보내고 백그라운드에서 업적/아이템 처리
+  res.status(200).json({
+    success: result.success,
+    newLevel: result.newLevel,
+    fragmentsGained: result.fragmentsGained || 0,
+    newMoney: user.money - enhanceCost,
+    newFragments: (user.fragments || 0) + (result.fragmentsGained || 0),
+    moneySpent: result.moneySpent
+  });
+
+  // 7. 업적 업데이트 (백그라운드에서 비동기 처리)
   if (result.success) {
-    const { data: achievements, error: achievementError } = await supabase
+    supabase
       .from('user_achievements')
       .select('unlocked_swords')
       .eq('user_id', userId)
-      .single();
-    
-    if (!achievementError && achievements) {
-      const currentUnlocked = achievements.unlocked_swords || ['0'];
-      const newLevelString = result.newLevel.toString();
-      
-      // 새로운 레벨이 이미 잠금 해제되지 않았다면 추가
-      if (!currentUnlocked.includes(newLevelString)) {
-        const updatedUnlocked = [...currentUnlocked, newLevelString];
-        await supabase
-          .from('user_achievements')
-          .update({ 
-            unlocked_swords: updatedUnlocked,
-            updated_at: new Date().toISOString()
-          })
-          .eq('user_id', userId);
-      }
-    } else {
-      // 업적 레코드가 없다면 생성
-      await supabase
-        .from('user_achievements')
-        .insert({
-          user_id: userId,
-          unlocked_swords: ['0', result.newLevel.toString()],
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-    }
+      .single()
+      .then(({ data: achievements, error: achievementError }) => {
+        if (!achievementError && achievements) {
+          const currentUnlocked = achievements.unlocked_swords || ['0'];
+          const newLevelString = result.newLevel.toString();
+          
+          if (!currentUnlocked.includes(newLevelString)) {
+            const updatedUnlocked = [...currentUnlocked, newLevelString];
+            return supabase
+              .from('user_achievements')
+              .update({ 
+                unlocked_swords: updatedUnlocked,
+                updated_at: new Date().toISOString()
+              })
+              .eq('user_id', userId);
+          }
+        } else {
+          return supabase
+            .from('user_achievements')
+            .insert({
+              user_id: userId,
+              unlocked_swords: ['0', result.newLevel.toString()],
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            });
+        }
+      })
+      .catch(err => console.error('Achievement update error:', err));
   }
 
-  // 8. 아이템 사용 처리 (inventories에서 차감)
+  // 8. 아이템 사용 처리 (백그라운드에서 비동기 처리)
   const usedItems = [];
   if (useDoubleChance) usedItems.push('doubleChance');
   if (useProtect) usedItems.push('protect');
@@ -163,17 +173,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }).match({ user_id: userId, item_id: item.id });
     }
   }
-  // 8. 최신 아이템 보유량 조회
-  const { data: inventoryRows } = await supabase
-    .from('inventories')
-    .select('item_id, quantity')
-    .eq('user_id', userId);
-
-  // 9. 응답 반환
-  return res.status(200).json({ 
-    ...result, 
-    newMoney: user.money - enhanceCost,
-    newFragments: (user.fragments || 0) + (result.fragmentsGained || 0),
-    inventory: inventoryRows 
-  });
+  
+  // 아이템 처리도 백그라운드에서 비동기 실행 (응답 후)
+  Promise.all(usedItems.map(async (itemType) => {
+    try {
+      const { data: item } = await supabase
+        .from('items')
+        .select('id')
+        .eq('type', itemType)
+        .single();
+      
+      if (item) {
+        await supabase
+          .from('inventories')
+          .update({ 
+            quantity: supabase.sql`quantity - 1`,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', userId)
+          .eq('item_id', item.id);
+      }
+    } catch (err) {
+      console.error(`Item processing error for ${itemType}:`, err);
+    }
+  })).catch(err => console.error('Item processing batch error:', err));
 }

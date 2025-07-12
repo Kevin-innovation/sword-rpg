@@ -57,7 +57,7 @@ export default function EnhanceButton() {
     try {
       // 타임아웃을 위한 AbortController 추가
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5초 타임아웃
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15초 타임아웃으로 증가
       
       const res = await fetch("/api/enhance", {
         method: "POST",
@@ -120,14 +120,26 @@ export default function EnhanceButton() {
     } catch (e) {
       console.error("강화 오류:", e);
       
-      // 네트워크 오류일 경우 재시도 (최대 2회)
-      if (retryCount < 2 && (e instanceof TypeError || e.message.includes('fetch'))) {
+      // AbortError나 네트워크 오류일 경우 재시도 (최대 2회)
+      const isNetworkError = e instanceof TypeError || 
+                            e.message.includes('fetch') || 
+                            e.message.includes('aborted') ||
+                            e.name === 'AbortError';
+      
+      if (retryCount < 2 && isNetworkError) {
         console.log(`재시도 중... (${retryCount + 1}/2)`);
-        setTimeout(() => handleEnhanceInternal(retryCount + 1), 500);
+        setTimeout(() => handleEnhanceInternal(retryCount + 1), 1000);
         return;
       }
       
-      alert(`통신 오류: ${e.message}`);
+      let errorMessage = "통신 오류가 발생했습니다";
+      if (e.message.includes('aborted')) {
+        errorMessage = "서버 응답 시간 초과";
+      } else if (e.message.includes('fetch')) {
+        errorMessage = "네트워크 연결 오류";
+      }
+      
+      alert(errorMessage);
       setDisabled(false);
       setAnim(false);
     }
