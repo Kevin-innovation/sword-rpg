@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { validateEnhancement } from '../../lib/antiCheat';
-import { calculateEnhanceChance, calculateEnhanceCost, calculateFragmentsGained } from '../../lib/gameLogic';
+import { calculateEnhanceChance, calculateEnhanceCost, calculateFragmentsGained, FRAGMENT_BOOST_OPTIONS, calculateBoostedChance } from '../../src/lib/gameLogic';
 import { supabase } from '../../lib/supabase';
 import type { User, Sword } from '../../lib/types';
 
@@ -32,7 +32,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     currentLevel,
     useDoubleChance = false,
     useProtect = false,
-    useDiscount = false
+    useDiscount = false,
+    useFragmentBoost = null
   } = req.body;
 
   // 1. 기본 유효성 검증
@@ -94,8 +95,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   }
   
+  // 조각 사용 검증 및 처리
+  let fragmentsToUse = 0;
+  let fragmentBoost = 0;
+  if (useFragmentBoost !== null && typeof useFragmentBoost === 'number') {
+    const boostOption = FRAGMENT_BOOST_OPTIONS[useFragmentBoost];
+    if (boostOption) {
+      if (user.fragments < boostOption.fragments) {
+        return res.status(400).json({ 
+          error: '조각이 부족합니다',
+          details: `필요: ${boostOption.fragments}개, 보유: ${user.fragments}개`
+        });
+      }
+      fragmentsToUse = boostOption.fragments;
+      fragmentBoost = boostOption.boost;
+    }
+  }
+
   let successRate = calculateEnhanceChance(currentLevel);
   if (useDoubleChance) successRate = Math.min(successRate * 2, 100);
+  if (fragmentBoost > 0) successRate = calculateBoostedChance(successRate, fragmentBoost);
+  
   let enhanceCost = calculateEnhanceCost(currentLevel);
   if (useDiscount) enhanceCost = Math.floor(enhanceCost * 0.5);
   if (user.money < enhanceCost) {
@@ -166,10 +186,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     level: result.newLevel,
     updated_at: new Date().toISOString(),
   }).eq('id', sword.id);
-  // 유저 돈/파편 갱신
+  // 유저 돈/파편 갱신 (조각 사용 포함)
+  const newFragments = Math.max(0, (user.fragments || 0) + (result.fragmentsGained || 0) - fragmentsToUse);
   await supabase.from('users').update({
     money: user.money - enhanceCost,
-    fragments: (user.fragments || 0) + (result.fragmentsGained || 0),
+    fragments: newFragments,
     updated_at: new Date().toISOString(),
   }).eq('id', user.id);
 
@@ -204,8 +225,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     success: result.success,
     newLevel: result.newLevel,
     fragmentsGained: result.fragmentsGained || 0,
+    fragmentsUsed: fragmentsToUse,
     newMoney: user.money - enhanceCost,
-    newFragments: (user.fragments || 0) + (result.fragmentsGained || 0),
+    newFragments: newFragments,
     moneySpent: result.moneySpent,
     updatedItems: updatedItems // 업데이트된 아이템 수량 포함
   });

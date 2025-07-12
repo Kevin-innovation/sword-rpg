@@ -47,6 +47,23 @@ export const calculateFragmentsGained = (level: number): number => {
   return level * 50;
 };
 
+// 조각으로 강화 확률 증가
+export const FRAGMENT_BOOST_OPTIONS = [
+  { fragments: 10, boost: 5, name: "+5% 확률 증가" },
+  { fragments: 20, boost: 10, name: "+10% 확률 증가" },
+  { fragments: 50, boost: 20, name: "+20% 확률 증가" }
+];
+
+// 조각 사용 가능 여부 확인
+export function canUseFragments(currentFragments: number, requiredFragments: number): boolean {
+  return currentFragments >= requiredFragments;
+}
+
+// 조각 사용 후 확률 계산
+export function calculateBoostedChance(baseChance: number, boostPercentage: number): number {
+  return Math.min(baseChance + boostPercentage, 100); // 최대 100%
+}
+
 // 누적 강화 비용 계산 함수 (로그 함수 기반)
 export function calculateTotalEnhanceCost(level: number): number {
   let total = 0;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useGameState } from "@/store/useGameState";
-import { calculateEnhanceChance, calculateEnhanceCost, calculateFragmentsOnFail, calculateSwordSellPrice } from "@/lib/gameLogic";
+import { calculateEnhanceChance, calculateEnhanceCost, calculateFragmentsOnFail, calculateSwordSellPrice, FRAGMENT_BOOST_OPTIONS, canUseFragments, calculateBoostedChance } from "@/lib/gameLogic";
 import { useGameData } from "@/hooks/useGameData";
 import { apiRequest } from "@/lib/apiUtils";
 import { motion } from "framer-motion";
@@ -24,6 +24,8 @@ export default function EnhanceButton() {
   const [useDoubleChance, setUseDoubleChance] = useState(false);
   const [useProtect, setUseProtect] = useState(false);
   const [useDiscount, setUseDiscount] = useState(false);
+  // 조각 사용 상태
+  const [selectedFragmentBoost, setSelectedFragmentBoost] = useState<number | null>(null);
   // 이스터에그: 7을 7번 연속 입력하면 77777골드 지급
   const [eggSeq, setEggSeq] = useState<number[]>([]);
   useEffect(() => {
@@ -73,7 +75,8 @@ export default function EnhanceButton() {
           currentLevel: swordLevel,
           useDoubleChance,
           useProtect,
-          useDiscount
+          useDiscount,
+          useFragmentBoost: selectedFragmentBoost
         },
         maxRetries: 3,
         timeout: 8000 // 8초 타임아웃
@@ -120,6 +123,9 @@ export default function EnhanceButton() {
           ...data.updatedItems
         });
       }
+      
+      // 조각 사용 상태 리셋
+      setSelectedFragmentBoost(null);
       
       // API 응답 후 즉시 버튼 활성화 (애니메이션은 계속 유지)
       setDisabled(false);
@@ -300,6 +306,35 @@ export default function EnhanceButton() {
           >
             할인({items.discount})
           </button>
+        </div>
+        
+        {/* 조각 사용 UI */}
+        <div className="w-full">
+          <div className="text-xs text-gray-600 mb-2 text-center">🧩 강화조각 사용 (보유: {fragments}개)</div>
+          <div className="flex gap-1 md:gap-2 w-full justify-between">
+            {FRAGMENT_BOOST_OPTIONS.map((option, index) => {
+              const canUse = canUseFragments(fragments, option.fragments);
+              const isSelected = selectedFragmentBoost === index;
+              
+              return (
+                <button
+                  key={index}
+                  className={`flex-1 px-1 md:px-2 py-1 md:py-2 rounded text-[10px] md:text-xs font-semibold border transition disabled:opacity-40 disabled:cursor-not-allowed ${
+                    isSelected 
+                      ? 'bg-purple-200 text-purple-800 border-purple-400 ring-2 ring-purple-400' 
+                      : 'bg-purple-50 text-purple-700 border-purple-300 hover:bg-purple-100'
+                  }`}
+                  disabled={!canUse || disabled}
+                  onClick={() => setSelectedFragmentBoost(isSelected ? null : index)}
+                >
+                  <div className="flex flex-col items-center">
+                    <span>{option.boost}%</span>
+                    <span className="text-[8px] md:text-[10px] opacity-70">({option.fragments}개)</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
         {/* 판매하기 버튼 */}
         <button
