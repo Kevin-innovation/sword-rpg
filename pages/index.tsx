@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useRouter } from "next/router";
-import { supabase } from "@/lib/supabase";
+import { useGameState } from "@/store/useGameState";
 import { useGameData } from "@/hooks/useGameData";
 import GameBoard from "@/components/game/GameBoard";
 import SwordDisplay from "@/components/game/SwordDisplay";
@@ -13,14 +13,19 @@ import UserSection from "@/components/ui/UserSection";
 
 export default function Home() {
   const router = useRouter();
+  const user = useGameState((state) => state.user);
   const { loadUserData } = useGameData();
   
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) router.replace("/login");
-      else loadUserData(); // 로그인 상태이면 게임 데이터 로드
-    });
-  }, [router, loadUserData]);
+    // _app.tsx에서 세션 관리하므로 user 상태만 확인
+    if (user === null) {
+      // 사용자 상태가 null이면 로그인 페이지로 리다이렉트
+      router.replace("/login");
+    } else if (user?.id) {
+      // 사용자가 로그인되어 있으면 게임 데이터 로드
+      loadUserData();
+    }
+  }, [user, router, loadUserData]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 relative overflow-hidden">

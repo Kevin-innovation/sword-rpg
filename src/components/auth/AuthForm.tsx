@@ -45,7 +45,7 @@ export default function AuthForm() {
             onConflict: 'user_id'
           });
         
-        router.replace("/");
+        // _app.tsx에서 자동으로 상태 관리하므로 리다이렉트 제거
       }
     });
     return () => {
@@ -88,7 +88,7 @@ export default function AuthForm() {
           onConflict: 'user_id'
         });
       
-      router.replace("/");
+      // _app.tsx에서 자동으로 상태 관리하므로 리다이렉트 제거
     }
     setLoading(false);
   };
@@ -139,7 +139,7 @@ export default function AuthForm() {
           onConflict: 'user_id'
         });
       
-      router.replace("/");
+      // _app.tsx에서 자동으로 상태 관리하므로 리다이렉트 제거
     }
     setLoading(false);
   };
