@@ -42,7 +42,7 @@ export default function EnhanceButton() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const handleEnhance = async (retryCount = 0) => {
+  const handleEnhanceInternal = async (retryCount = 0) => {
     if (disabled) return;
     setDisabled(true);
     setAnim(true);
@@ -122,7 +122,7 @@ export default function EnhanceButton() {
       // 네트워크 오류일 경우 재시도 (최대 2회)
       if (retryCount < 2 && (e instanceof TypeError || e.message.includes('fetch'))) {
         console.log(`재시도 중... (${retryCount + 1}/2)`);
-        setTimeout(() => handleEnhance(retryCount + 1), 500);
+        setTimeout(() => handleEnhanceInternal(retryCount + 1), 500);
         return;
       }
       
@@ -136,6 +136,10 @@ export default function EnhanceButton() {
       setAnim(false);
       setResult(null);
     }, 150);
+  };
+
+  const handleEnhance = () => {
+    handleEnhanceInternal(0);
   };
 
   const sellPrice = calculateSwordSellPrice(swordLevel);
