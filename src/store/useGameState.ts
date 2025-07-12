@@ -37,6 +37,7 @@ export type GameState = {
 const achievementCache = new Map<string, { data: boolean[], timestamp: number }>();
 const CACHE_DURATION = 5000; // 5초로 단축 (더 빠른 동기화)
 const activeRequests = new Set<string>();
+const lastLoadTime = new Map<string, number>(); // 마지막 로드 시간 추적
 
 export const useGameState = create<GameState>((set, get) => ({
   user: null,
