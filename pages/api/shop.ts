@@ -13,6 +13,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    console.log('Shop API called with:', { userId, itemType, price });
+    
     // 트랜잭션으로 안전하게 처리
     const { data, error } = await supabase.rpc('handle_item_purchase', {
       p_user_id: userId,
@@ -21,7 +23,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     if (error) {
-      console.error('Purchase error:', error);
+      console.error('Purchase error details:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
       return res.status(400).json({ error: error.message });
     }
 
