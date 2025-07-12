@@ -14,6 +14,8 @@ export default function EnhanceButton() {
   const setItems = useGameState((s) => s.setItems);
   const foundSwords = useGameState((s) => s.foundSwords);
   const setFoundSwords = useGameState((s) => s.setFoundSwords);
+  const loadUserAchievements = useGameState((s) => s.loadUserAchievements);
+  const user = useGameState((s) => s.user);
   // 아이템 사용 상태
   const [useDoubleChance, setUseDoubleChance] = useState(false);
   const [useProtect, setUseProtect] = useState(false);
@@ -77,6 +79,10 @@ export default function EnhanceButton() {
       if (data.success) {
         setSwordLevel(data.newLevel);
         setResult("success");
+        // 성공시 업적 실시간 업데이트
+        if (user?.id) {
+          loadUserAchievements(user.id);
+        }
         // 성공시 알림창 제거 - 시각적 효과만 표시
       } else {
         setSwordLevel(data.newLevel);

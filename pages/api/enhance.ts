@@ -108,7 +108,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
 
-  // 7. 아이템 사용 처리 (inventories에서 차감)
+  // 7. 업적 업데이트 (강화 성공 시 새로운 검 레벨 잠금 해제)
+  if (result.success) {
+    const { data: achievements, error: achievementError } = await supabase
+      .from('user_achievements')
+      .select('unlocked_swords')
+      .eq('user_id', userId)
+      .single();
+    
+    if (!achievementError && achievements) {
+      const currentUnlocked = achievements.unlocked_swords || ['0'];
+      const newLevelString = result.newLevel.toString();
+      
+      // 새로운 레벨이 이미 잠금 해제되지 않았다면 추가
+      if (!currentUnlocked.includes(newLevelString)) {
+        const updatedUnlocked = [...currentUnlocked, newLevelString];
+        await supabase
+          .from('user_achievements')
+          .update({ 
+            unlocked_swords: updatedUnlocked,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', userId);
+      }
+    } else {
+      // 업적 레코드가 없다면 생성
+      await supabase
+        .from('user_achievements')
+        .insert({
+          user_id: userId,
+          unlocked_swords: ['0', result.newLevel.toString()],
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+    }
+  }
+
+  // 8. 아이템 사용 처리 (inventories에서 차감)
   const usedItems = [];
   if (useDoubleChance) usedItems.push('doubleChance');
   if (useProtect) usedItems.push('protect');

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { calculateEnhanceChance, calculateEnhanceCost } from '@/lib/gameLogic';
+import { supabase } from '@/lib/supabase';
 
 export type GameState = {
   user: { id: string; email?: string; nickname?: string } | null;
@@ -26,6 +27,7 @@ export type GameState = {
   setEnhanceCost: (cost: number) => void;
   setIsEnhancing: (is: boolean) => void;
   setFoundSwords: (found: boolean[]) => void;
+  loadUserAchievements: (userId: string) => Promise<void>;
 };
 
 export const useGameState = create<GameState>((set) => ({
@@ -64,4 +66,28 @@ export const useGameState = create<GameState>((set) => ({
   setEnhanceCost: (enhanceCost) => set({ enhanceCost }),
   setIsEnhancing: (isEnhancing) => set({ isEnhancing }),
   setFoundSwords: (found) => set({ foundSwords: found }),
+  loadUserAchievements: async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_achievements')
+        .select('unlocked_swords')
+        .eq('user_id', userId)
+        .single();
+      
+      if (!error && data) {
+        // 잠금 해제된 검 레벨을 boolean 배열로 변환
+        const unlockedLevels = data.unlocked_swords || ['0'];
+        const foundSwords = Array(21).fill(false);
+        unlockedLevels.forEach((level: string) => {
+          const levelNum = parseInt(level, 10);
+          if (levelNum >= 0 && levelNum < 21) {
+            foundSwords[levelNum] = true;
+          }
+        });
+        set({ foundSwords });
+      }
+    } catch (err) {
+      console.error('Failed to load achievements:', err);
+    }
+  },
 })); 

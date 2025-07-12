@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { useGameState } from "@/store/useGameState";
 
 export function useGameData() {
-  const { user, setMoney, setSwordLevel, setFragments, setItems } = useGameState();
+  const { user, setMoney, setSwordLevel, setFragments, setItems, loadUserAchievements } = useGameState();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -81,6 +81,9 @@ export function useGameData() {
       if (swordData) {
         setSwordLevel(swordData.level || 0);
       }
+      
+      // 업적 정보 로드
+      await loadUserAchievements(user.id);
       
       // 아이템 정보 가져오기 (추후 구현)
       // const { data: itemData } = await supabase
