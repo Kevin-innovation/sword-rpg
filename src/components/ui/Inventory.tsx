@@ -5,7 +5,14 @@ import { supabase } from "@/lib/supabase";
 const swordNames = [
   "녹슨 검", "견고한 검", "빛나는 검", "기사도의 검", "불꽃의 검", "용맹의 검", "신비의 검", "영웅의 검", "전설의 검", "신화의 검", "초월의 검", "심연의 검", "창공의 검", "태초의 검", "무한의 검", "신성의 검", "절대자의 검", "운명의 검", "파멸의 검", "창세의 검", "영원의 검"
 ];
-const swordImgs = Array.from({length: 21}, (_, i) => `/sword_img/${i+1}.svg`);
+const swordImgs = Array.from({length: 21}, (_, i) => {
+  // 0~6: 새로운 이미지, 7~20: 기존 이미지 또는 폴백
+  if (i <= 6) {
+    return `/images/swords/${i + 1}.png`;
+  } else {
+    return `/sword_img/1.svg`; // 폴백
+  }
+});
 
 const Inventory = () => {
   const foundSwords = useGameState((s) => s.foundSwords);

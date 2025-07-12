@@ -91,14 +91,18 @@ export default function SwordDisplay() {
         animate={controls} 
         className="flex flex-col items-center justify-center relative z-10"
       >
-        {/* 검 이모지 */}
+        {/* 검 이미지 */}
         <div className="relative mb-4">
-          <div className={`text-8xl sm:text-9xl select-none transition-all duration-500 ${getSwordStyle()}`}>
-            {swordLevel === 0 ? (
-              <img src="/sword_img/1.svg" alt="녹슨 검" className="w-20 h-20 sm:w-28 sm:h-28 object-contain mx-auto" />
-            ) : (
-              "🗡️"
-            )}
+          <div className={`select-none transition-all duration-500 ${getSwordStyle()}`}>
+            <img 
+              src={`/images/swords/${Math.min(swordLevel + 1, 7)}.png`} 
+              alt={swordNames[swordLevel] || "미지의 검"} 
+              className="w-24 h-24 sm:w-32 sm:h-32 object-contain mx-auto drop-shadow-lg"
+              onError={(e) => {
+                // 이미지 로드 실패시 폴백
+                e.currentTarget.src = "/sword_img/1.svg";
+              }}
+            />
           </div>
           {/* 강화 성공시 파티클 효과 */}
           {swordLevel > 0 && (
