@@ -17,6 +17,7 @@ export type GameState = {
     discount: number;
   };
   foundSwords: boolean[];
+  isLoadingAchievements: boolean;
   setUser: (user: { id: string; email?: string; nickname?: string } | null) => void;
   setItems: (items: GameState["items"]) => void;
   reset: () => void;
@@ -44,6 +45,7 @@ export const useGameState = create<GameState>((set) => ({
     discount: 0,
   },
   foundSwords: (() => { const arr = Array(21).fill(false); arr[0] = true; return arr; })(),
+  isLoadingAchievements: false,
   setUser: (user) => set({ user }),
   setItems: (items) => set({ items }),
   reset: () => set({
@@ -67,6 +69,11 @@ export const useGameState = create<GameState>((set) => ({
   setIsEnhancing: (isEnhancing) => set({ isEnhancing }),
   setFoundSwords: (found) => set({ foundSwords: found }),
   loadUserAchievements: async (userId: string) => {
+    const { isLoadingAchievements } = get();
+    if (isLoadingAchievements) return; // 이미 로딩 중이면 중단
+    
+    set({ isLoadingAchievements: true });
+    
     try {
       const { data, error } = await supabase
         .from('user_achievements')
@@ -88,6 +95,8 @@ export const useGameState = create<GameState>((set) => ({
       }
     } catch (err) {
       console.error('Failed to load achievements:', err);
+    } finally {
+      set({ isLoadingAchievements: false });
     }
   },
 })); 

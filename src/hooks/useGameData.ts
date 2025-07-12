@@ -9,7 +9,7 @@ export function useGameData() {
 
   // 사용자 데이터 실시간 로드
   const loadUserData = async () => {
-    if (!user?.id) return;
+    if (!user?.id || loading) return; // 이미 로딩 중이면 중단
     
     setLoading(true);
     setError(null);

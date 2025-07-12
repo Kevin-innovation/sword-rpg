@@ -11,9 +11,15 @@ export type RankingEntry = {
 
 export function useRealTimeRanking() {
   const [ranking, setRanking] = useState<RankingEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchRanking = async () => {
+      if (isLoading) return; // 이미 로딩 중이면 중단
+      
+      setIsLoading(true);
       try {
         // rankings 테이블에서 최고 레벨 기록 조회
         const { data: rankings, error: rankingError } = await supabase
@@ -57,12 +63,23 @@ export function useRealTimeRanking() {
           return b.totalGold - a.totalGold;
         });
         
-        setRanking(mapped);
+        if (isMounted) {
+          setRanking(mapped);
+        }
       } catch (err) {
         console.error("Ranking error:", err);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
+    
     fetchRanking();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return ranking;
