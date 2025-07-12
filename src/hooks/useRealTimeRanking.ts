@@ -12,7 +12,6 @@ export type RankingEntry = {
   nickname: string;
   maxLevel: number;
   totalGold: number;
-  fragments: number;
 };
 
 export function useRealTimeRanking() {
@@ -48,11 +47,11 @@ export function useRealTimeRanking() {
           return;
         }
         
-        // 사용자 정보 별도 조회
+        // 사용자 정보 별도 조회 (이메일만 필요)
         const userIds = rankings.map(r => r.user_id);
         const { data: users, error: userError } = await supabase
           .from("users")
-          .select("id, email, fragments")
+          .select("id, email")
           .in("id", userIds);
         
         if (userError) {
@@ -67,7 +66,6 @@ export function useRealTimeRanking() {
             nickname: user?.email?.split('@')[0] || "익명",
             maxLevel: ranking.max_sword_level || 0,
             totalGold: ranking.total_gold || 0,
-            fragments: user?.fragments || 0,
           };
         }).sort((a, b) => {
           // 1순위: 최고 레벨, 2순위: 골드

@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { useGameState } from "@/store/useGameState";
-import { calculateSwordSellPrice } from "@/lib/gameLogic";
 import { supabase } from "@/lib/supabase";
 
 const swordNames = [
@@ -10,10 +9,6 @@ const swordImgs = Array.from({length: 21}, (_, i) => `/sword_img/${i+1}.svg`);
 
 const Inventory = () => {
   const foundSwords = useGameState((s) => s.foundSwords);
-  const swordLevel = useGameState((s) => s.swordLevel);
-  const setSwordLevel = useGameState((s) => s.setSwordLevel);
-  const money = useGameState((s) => s.money);
-  const setMoney = useGameState((s) => s.setMoney);
   const user = useGameState((s) => s.user);
   const setItems = useGameState((s) => s.setItems);
   const loadUserAchievements = useGameState((s) => s.loadUserAchievements);
@@ -55,14 +50,6 @@ const Inventory = () => {
     fetchInventory();
   }, [user?.id, setItems]);
 
-  const sellPrice = calculateSwordSellPrice(swordLevel);
-
-  const handleSell = () => {
-    if (swordLevel === 0) return alert("판매할 검이 없습니다.");
-    setMoney(money + sellPrice);
-    setSwordLevel(0);
-    alert(`검을 ${sellPrice.toLocaleString()} G에 판매했습니다!`);
-  };
 
   return (
     <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-200/50 p-6 md:p-8 w-full">

@@ -12,6 +12,7 @@ export default function EnhanceButton() {
   const [disabled, setDisabled] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false); // 중복 요청 방지
   const [lastClickTime, setLastClickTime] = useState(0); // 디바운싱용
+  const [isSelling, setIsSelling] = useState(false); // 판매 중 상태
   const items = useGameState((s) => s.items);
   const setItems = useGameState((s) => s.setItems);
   const foundSwords = useGameState((s) => s.foundSwords);
@@ -169,11 +170,52 @@ export default function EnhanceButton() {
   };
 
   const sellPrice = calculateSwordSellPrice(swordLevel);
-  const handleSell = () => {
-    if (swordLevel === 0) return alert("판매할 검이 없습니다.");
-    setMoney(money + sellPrice);
-    setSwordLevel(0);
-    alert(`검을 ${sellPrice.toLocaleString()} G에 판매했습니다!`);
+  const handleSell = async () => {
+    if (!user?.id) {
+      alert('로그인이 필요합니다!');
+      return;
+    }
+    
+    if (swordLevel === 0) {
+      alert('판매할 검이 없습니다.');
+      return;
+    }
+    
+    if (isSelling) return;
+    
+    setIsSelling(true);
+    
+    try {
+      const response = await fetch('/api/sell', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          swordLevel: swordLevel
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || '판매 실패');
+      }
+      
+      // 상태 업데이트
+      setMoney(data.newMoney);
+      setSwordLevel(data.newLevel);
+      
+      // 랭킹 새로고침 (골드 변경으로 인한)
+      refreshRanking();
+      
+      alert(data.message || '판매 완료!');
+      
+    } catch (error) {
+      console.error('판매 오류:', error);
+      alert(error.message || '판매 중 오류가 발생했습니다.');
+    } finally {
+      setIsSelling(false);
+    }
   };
 
   const cost = calculateEnhanceCost(swordLevel);
@@ -281,10 +323,10 @@ export default function EnhanceButton() {
         <button
           className={`w-full px-2 md:px-3 py-3 md:py-4 rounded-2xl font-bold text-lg md:text-xl shadow-xl transition-all duration-300 select-none bg-orange-400 text-white hover:bg-orange-500 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap`}
           onClick={handleSell}
-          disabled={swordLevel === 0}
+          disabled={swordLevel === 0 || isSelling}
         >
           <div className="flex flex-col items-center">
-            <span>판매하기</span>
+            <span>{isSelling ? '판매 중...' : '판매하기'}</span>
             <span className="text-xs font-normal mt-1">{swordLevel > 0 ? `${sellPrice.toLocaleString()} G` : "-"}</span>
           </div>
         </button>

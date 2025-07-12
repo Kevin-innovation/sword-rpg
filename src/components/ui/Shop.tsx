@@ -28,16 +28,55 @@ const Shop = () => {
   const setMoney = useGameState((s) => s.setMoney);
   const items = useGameState((s) => s.items);
   const setItems = useGameState((s) => s.setItems);
-  // 간단한 상태로 아이템 보유 수량 관리 (실제 게임에서는 전역/서버로 관리)
-  const [itemCounts, setItemCounts] = useState<{ [id: string]: number }>({});
+  const user = useGameState((s) => s.user);
+  const [purchasing, setPurchasing] = useState<string | null>(null);
 
-  const handleBuy = (id: string, price: number) => {
-    if ((items[id] || 0) >= 10) return alert("최대 10개까지만 보유할 수 있습니다!");
-    if (money < price) return alert("골드가 부족합니다!");
-    setMoney(money - price);
-    setItems({ ...items, [id]: (items[id] || 0) + 1 });
-    setItemCounts((prev) => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
-    alert("구매 완료!");
+  const handleBuy = async (id: string, price: number) => {
+    if (!user?.id) {
+      alert('로그인이 필요합니다!');
+      return;
+    }
+    
+    if ((items[id] || 0) >= 10) {
+      alert('최대 10개까지만 보유할 수 있습니다!');
+      return;
+    }
+    
+    if (money < price) {
+      alert('골드가 부족합니다!');
+      return;
+    }
+    
+    setPurchasing(id);
+    
+    try {
+      const response = await fetch('/api/shop', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          itemType: id,
+          price: price
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || '구매 실패');
+      }
+      
+      // 상태 업데이트
+      setMoney(data.newMoney);
+      setItems({ ...items, [id]: data.newItemCount });
+      alert(data.message || '구매 완료!');
+      
+    } catch (error) {
+      console.error('구매 오류:', error);
+      alert(error.message || '구매 중 오류가 발생했습니다.');
+    } finally {
+      setPurchasing(null);
+    }
   };
 
   return (
@@ -57,9 +96,9 @@ const Shop = () => {
             <button
               className={`mt-2 md:mt-0 px-3 md:px-4 py-1.5 md:py-2 rounded bg-orange-400 text-white text-xs md:text-sm font-semibold shadow hover:bg-orange-500 transition disabled:opacity-50 disabled:cursor-not-allowed`}
               onClick={() => handleBuy(item.id, item.price)}
-              disabled={money < item.price || (items[item.id] || 0) >= 10}
+              disabled={money < item.price || (items[item.id] || 0) >= 10 || purchasing === item.id}
             >
-              {item.price.toLocaleString()} G 구매
+              {purchasing === item.id ? '구매중...' : `${item.price.toLocaleString()} G 구매`}
             </button>
           </div>
         ))}

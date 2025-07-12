@@ -42,7 +42,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(404).json({ error: 'Sword not found' });
   }
 
-  // 4. 강화 확률 계산 및 결과 결정
+  // 4. 아이템 보유 확인 및 강화 확률 계산
+  const usedItems = [];
+  if (useDoubleChance) usedItems.push('doubleChance');
+  if (useProtect) usedItems.push('protect');
+  if (useDiscount) usedItems.push('discount');
+  
+  // 아이템 보유 수량 확인
+  for (const itemType of usedItems) {
+    const { data: item } = await supabase
+      .from('items')
+      .select('id')
+      .eq('type', itemType)
+      .single();
+    
+    if (item) {
+      const { data: inventory } = await supabase
+        .from('inventories')
+        .select('quantity')
+        .eq('user_id', userId)
+        .eq('item_id', item.id)
+        .single();
+      
+      if (!inventory || inventory.quantity <= 0) {
+        return res.status(400).json({ error: `부족한 아이템: ${itemType}` });
+      }
+    } else {
+      return res.status(400).json({ error: `아이템을 찾을 수 없음: ${itemType}` });
+    }
+  }
+  
   let successRate = calculateEnhanceChance(currentLevel);
   if (useDoubleChance) successRate = Math.min(successRate * 2, 100);
   let enhanceCost = calculateEnhanceCost(currentLevel);
@@ -158,63 +187,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     })();
   }
 
-  // 8. 아이템 사용 처리 (백그라운드에서 비동기 처리)
-  const usedItems = [];
-  if (useDoubleChance) usedItems.push('doubleChance');
-  if (useProtect) usedItems.push('protect');
-  if (useDiscount) usedItems.push('discount');
-  for (const itemType of usedItems) {
-    // itemType에 해당하는 item_id 조회
-    const { data: item, error: itemError } = await supabase
-      .from('items')
-      .select('id')
-      .eq('type', itemType)
-      .single();
-    if (!itemError && item) {
-      // 해당 유저의 인벤토리에서 수량 차감
-      await supabase.from('inventories').update({
-        quantity: supabase.rpc('decrement_quantity', { user_id: userId, item_id: item.id })
-      }).match({ user_id: userId, item_id: item.id });
-    }
-  }
-  
-  // 아이템 처리도 백그라운드에서 비동기 실행 (응답 후)
-  (async () => {
-    try {
-      await Promise.all(usedItems.map(async (itemType) => {
-        try {
-          const { data: item } = await supabase
-            .from('items')
-            .select('id')
-            .eq('type', itemType)
-            .single();
-          
-          if (item) {
-            // 현재 수량을 조회한 후 1 감소
-            const { data: inventory } = await supabase
-              .from('inventories')
-              .select('quantity')
-              .eq('user_id', userId)
-              .eq('item_id', item.id)
-              .single();
-            
-            if (inventory && inventory.quantity > 0) {
-              await supabase
-                .from('inventories')
-                .update({ 
-                  quantity: inventory.quantity - 1,
-                  updated_at: new Date().toISOString()
-                })
-                .eq('user_id', userId)
-                .eq('item_id', item.id);
-            }
-          }
-        } catch (err) {
-          console.error(`Item processing error for ${itemType}:`, err);
+  // 8. 아이템 소비 처리 (동기적으로 처리하여 안전성 보장)
+  try {
+    await Promise.all(usedItems.map(async (itemType) => {
+      const { data: item } = await supabase
+        .from('items')
+        .select('id')
+        .eq('type', itemType)
+        .single();
+      
+      if (item) {
+        // 현재 수량을 조회한 후 1 감소
+        const { data: inventory } = await supabase
+          .from('inventories')
+          .select('quantity')
+          .eq('user_id', userId)
+          .eq('item_id', item.id)
+          .single();
+        
+        if (inventory && inventory.quantity > 0) {
+          await supabase
+            .from('inventories')
+            .update({ 
+              quantity: inventory.quantity - 1,
+              updated_at: new Date().toISOString()
+            })
+            .eq('user_id', userId)
+            .eq('item_id', item.id);
         }
-      }));
-    } catch (err) {
-      console.error('Item processing batch error:', err);
-    }
-  })();
+      }
+    }));
+  } catch (err) {
+    console.error('Item consumption error:', err);
+    // 아이템 소비 실패시 로그만 기록하고 계속 진행
+  }
 }

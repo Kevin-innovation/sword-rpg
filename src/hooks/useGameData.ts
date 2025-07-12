@@ -93,9 +93,14 @@ export function useGameData() {
         swordData = existingSword;
       }
       
-      // 상태 업데이트
+      // 상태 업데이트 - 실제 데이터 우선 사용
       if (userData) {
-        setMoney(userData.money || 30000);
+        console.log('사용자 데이터 로드 완료:', {
+          userId: user.id,
+          money: userData.money,
+          fragments: userData.fragments
+        });
+        setMoney(userData.money || 30000); // 데이터베이스에서 로드된 실제 골드 사용
         setFragments(userData.fragments || 0);
       }
       

@@ -41,7 +41,7 @@ const lastLoadTime = new Map<string, number>(); // 마지막 로드 시간 추�
 
 export const useGameState = create<GameState>((set, get) => ({
   user: null,
-  money: 30000,
+  money: 0, // 초기값 0으로 설정, 실제 데이터 로드 전까지 기다림
   swordLevel: 0,
   fragments: 0,
   enhanceChance: 100,
@@ -59,7 +59,7 @@ export const useGameState = create<GameState>((set, get) => ({
   setItems: (items) => set({ items }),
   reset: () => set({
     user: null,
-    money: 30000,
+    money: 0, // 로그아웃시 0으로 리셋
     swordLevel: 0,
     fragments: 0,
     enhanceChance: 100,

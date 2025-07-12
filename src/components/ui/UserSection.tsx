@@ -5,12 +5,12 @@ import { useGameState } from "@/store/useGameState";
 
 const UserSection = () => {
   const router = useRouter();
-  const { user, setUser } = useGameState();
+  const { user, setUser, reset } = useGameState();
 
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
-      setUser(null);
+      reset(); // 전체 상태 리셋 (골드, 레벨, 업적 등 모두 초기화)
       router.replace("/login");
     } catch (error) {
       console.error("로그아웃 오류:", error);

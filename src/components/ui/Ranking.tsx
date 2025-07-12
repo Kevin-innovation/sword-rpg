@@ -22,13 +22,12 @@ const Ranking = () => {
             <th className="py-2 md:py-3">닉네임</th>
             <th className="py-2 md:py-3">최고 강화</th>
             <th className="py-2 md:py-3">골드</th>
-            <th className="py-2 md:py-3">조각</th>
           </tr>
         </thead>
         <tbody>
           {isLoading ? (
             <tr>
-              <td colSpan={5} className="py-4 text-center text-slate-400">
+              <td colSpan={4} className="py-4 text-center text-slate-400">
                 <div className="flex items-center justify-center gap-2">
                   <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                   랭킹 로딩 중...
@@ -37,7 +36,7 @@ const Ranking = () => {
             </tr>
           ) : ranking.length === 0 ? (
             <tr>
-              <td colSpan={5} className="py-4 text-center text-slate-400">
+              <td colSpan={4} className="py-4 text-center text-slate-400">
                 랭킹 데이터가 없습니다
               </td>
             </tr>
@@ -50,7 +49,6 @@ const Ranking = () => {
                 <td className="py-2 md:py-3">{entry.nickname}</td>
                 <td className="py-2 md:py-3">+{entry.maxLevel}</td>
                 <td className="py-2 md:py-3">{entry.totalGold.toLocaleString()} G</td>
-                <td className="py-2 md:py-3">{entry.fragments || 0}</td>
               </tr>
             ))
           )}
