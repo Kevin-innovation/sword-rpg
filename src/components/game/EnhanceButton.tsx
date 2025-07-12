@@ -42,7 +42,7 @@ export default function EnhanceButton() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const handleEnhance = async () => {
+  const handleEnhance = async (retryCount = 0) => {
     if (disabled) return;
     setDisabled(true);
     setAnim(true);
@@ -55,19 +55,34 @@ export default function EnhanceButton() {
     }
     
     try {
+      // 타임아웃을 위한 AbortController 추가
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5초 타임아웃
+      
       const res = await fetch("/api/enhance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: user.id,
-          currentLevel: swordLevel,
+          useDoubleChance,
+          useProtect,
+          useDiscount
         }),
+        signal: controller.signal
       });
       
-      const data = await res.json();
+      clearTimeout(timeoutId);
       
       if (!res.ok) {
-        alert(data.error || "강화 중 오류 발생");
+        const errorText = await res.text();
+        console.error(`HTTP ${res.status}:`, errorText);
+        throw new Error(`서버 오류 (${res.status})`);
+      }
+      
+      const data = await res.json();
+      if (data.error) {
+        console.error('API Error:', data.error);
+        alert(`오류: ${data.error}`);
         setDisabled(false);
         setAnim(false);
         return;
@@ -103,16 +118,24 @@ export default function EnhanceButton() {
       
     } catch (e) {
       console.error("강화 오류:", e);
-      alert("서버 통신 오류");
+      
+      // 네트워크 오류일 경우 재시도 (최대 2회)
+      if (retryCount < 2 && (e instanceof TypeError || e.message.includes('fetch'))) {
+        console.log(`재시도 중... (${retryCount + 1}/2)`);
+        setTimeout(() => handleEnhance(retryCount + 1), 500);
+        return;
+      }
+      
+      alert(`통신 오류: ${e.message}`);
       setDisabled(false);
       setAnim(false);
     }
     
-    // 애니메이션만 250ms 후 종료 (빠른 반응)
+    // 애니메이션만 150ms 후 종료 (극도로 빠른 반응)
     setTimeout(() => {
       setAnim(false);
       setResult(null);
-    }, 250);
+    }, 150);
   };
 
   const sellPrice = calculateSwordSellPrice(swordLevel);

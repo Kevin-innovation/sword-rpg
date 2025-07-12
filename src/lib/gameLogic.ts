@@ -79,13 +79,13 @@ export const enhancementEffects = {
   success: {
     particle: "golden-explosion",
     sound: "epic-success.mp3",
-    duration: 500,
+    duration: 200,
     className: "animate-success-burst"
   },
   failure: {
     particle: "dark-shatter",
     sound: "tragic-fail.mp3",
-    duration: 600,
+    duration: 250,
     className: "animate-failure-devastation"
   }
 }; 
