@@ -190,14 +190,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             .single();
           
           if (item) {
-            await supabase
+            // 현재 수량을 조회한 후 1 감소
+            const { data: inventory } = await supabase
               .from('inventories')
-              .update({ 
-                quantity: supabase.sql`quantity - 1`,
-                updated_at: new Date().toISOString()
-              })
+              .select('quantity')
               .eq('user_id', userId)
-              .eq('item_id', item.id);
+              .eq('item_id', item.id)
+              .single();
+            
+            if (inventory && inventory.quantity > 0) {
+              await supabase
+                .from('inventories')
+                .update({ 
+                  quantity: inventory.quantity - 1,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('user_id', userId)
+                .eq('item_id', item.id);
+            }
           }
         } catch (err) {
           console.error(`Item processing error for ${itemType}:`, err);
