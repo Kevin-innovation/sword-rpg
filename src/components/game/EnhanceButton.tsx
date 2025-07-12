@@ -10,6 +10,8 @@ export default function EnhanceButton() {
   const [result, setResult] = useState<null | "success" | "fail">(null);
   const [anim, setAnim] = useState(false);
   const [disabled, setDisabled] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false); // 중복 요청 방지
+  const [lastClickTime, setLastClickTime] = useState(0); // 디바운싱용
   const items = useGameState((s) => s.items);
   const setItems = useGameState((s) => s.setItems);
   const foundSwords = useGameState((s) => s.foundSwords);
@@ -43,7 +45,13 @@ export default function EnhanceButton() {
   }, []);
 
   const handleEnhanceInternal = async (retryCount = 0) => {
-    if (disabled) return;
+    const now = Date.now();
+    
+    // 중복 요청 완전 차단 + 100ms 디바운싱
+    if (disabled || isProcessing || (now - lastClickTime < 100)) return;
+    
+    setLastClickTime(now);
+    setIsProcessing(true);
     setDisabled(true);
     setAnim(true);
     
@@ -51,6 +59,7 @@ export default function EnhanceButton() {
       alert("로그인이 필요합니다!");
       setDisabled(false);
       setAnim(false);
+      setIsProcessing(false);
       return;
     }
     
@@ -116,6 +125,7 @@ export default function EnhanceButton() {
       
       // API 응답 후 즉시 버튼 활성화 (애니메이션은 계속 유지)
       setDisabled(false);
+      setIsProcessing(false);
       
     } catch (e) {
       console.error("강화 오류:", e);
@@ -142,6 +152,7 @@ export default function EnhanceButton() {
       alert(errorMessage);
       setDisabled(false);
       setAnim(false);
+      setIsProcessing(false);
     }
     
     // 애니메이션만 150ms 후 종료 (극도로 빠른 반응)
