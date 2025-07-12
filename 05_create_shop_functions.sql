@@ -6,7 +6,7 @@ CREATE OR REPLACE FUNCTION handle_item_purchase(
 ) RETURNS JSON AS $$
 DECLARE
   user_money INTEGER;
-  item_id INTEGER;
+  item_id UUID;
   current_quantity INTEGER := 0;
   new_quantity INTEGER;
   result JSON;
