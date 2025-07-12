@@ -98,7 +98,47 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     };
   }
 
-  // 5. DB 업데이트
+  // 5. 아이템 소비 처리 (응답 전에 처리하여 확실히 반영)
+  const updatedItems = { doubleChance: 0, protect: 0, discount: 0 };
+  try {
+    await Promise.all(usedItems.map(async (itemType) => {
+      const { data: item } = await supabase
+        .from('items')
+        .select('id')
+        .eq('type', itemType)
+        .single();
+      
+      if (item) {
+        // 현재 수량을 조회한 후 1 감소
+        const { data: inventory } = await supabase
+          .from('inventories')
+          .select('quantity')
+          .eq('user_id', userId)
+          .eq('item_id', item.id)
+          .single();
+        
+        if (inventory && inventory.quantity > 0) {
+          const newQuantity = inventory.quantity - 1;
+          await supabase
+            .from('inventories')
+            .update({ 
+              quantity: newQuantity,
+              updated_at: new Date().toISOString()
+            })
+            .eq('user_id', userId)
+            .eq('item_id', item.id);
+          
+          // 업데이트된 수량 저장
+          updatedItems[itemType as keyof typeof updatedItems] = newQuantity;
+        }
+      }
+    }));
+  } catch (err) {
+    console.error('Item consumption error:', err);
+    return res.status(500).json({ error: '아이템 소비 중 오류가 발생했습니다' });
+  }
+
+  // 6. DB 업데이트
   // 검 레벨 갱신
   await supabase.from('swords').update({
     level: result.newLevel,
@@ -111,7 +151,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     updated_at: new Date().toISOString(),
   }).eq('id', user.id);
 
-  // 6. rankings 테이블 업데이트 (최고 레벨, 총 골드)
+  // 7. rankings 테이블 업데이트 (최고 레벨, 총 골드)
   const { data: ranking, error: rankingError } = await supabase
     .from('rankings')
     .select('*')
@@ -137,17 +177,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
 
-  // 먼저 클라이언트에 응답을 보내고 백그라운드에서 업적/아이템 처리
+  // 8. 클라이언트에 응답 (아이템 소비 후 업데이트된 정보 포함)
   res.status(200).json({
     success: result.success,
     newLevel: result.newLevel,
     fragmentsGained: result.fragmentsGained || 0,
     newMoney: user.money - enhanceCost,
     newFragments: (user.fragments || 0) + (result.fragmentsGained || 0),
-    moneySpent: result.moneySpent
+    moneySpent: result.moneySpent,
+    updatedItems: updatedItems // 업데이트된 아이템 수량 포함
   });
 
-  // 7. 업적 업데이트 (백그라운드에서 비동기 처리)
+  // 9. 업적 업데이트 (백그라운드에서 비동기 처리)
   if (result.success) {
     (async () => {
       try {
@@ -187,38 +228,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     })();
   }
 
-  // 8. 아이템 소비 처리 (동기적으로 처리하여 안전성 보장)
-  try {
-    await Promise.all(usedItems.map(async (itemType) => {
-      const { data: item } = await supabase
-        .from('items')
-        .select('id')
-        .eq('type', itemType)
-        .single();
-      
-      if (item) {
-        // 현재 수량을 조회한 후 1 감소
-        const { data: inventory } = await supabase
-          .from('inventories')
-          .select('quantity')
-          .eq('user_id', userId)
-          .eq('item_id', item.id)
-          .single();
-        
-        if (inventory && inventory.quantity > 0) {
-          await supabase
-            .from('inventories')
-            .update({ 
-              quantity: inventory.quantity - 1,
-              updated_at: new Date().toISOString()
-            })
-            .eq('user_id', userId)
-            .eq('item_id', item.id);
-        }
-      }
-    }));
-  } catch (err) {
-    console.error('Item consumption error:', err);
-    // 아이템 소비 실패시 로그만 기록하고 계속 진행
-  }
+  // 아이템 소비는 이미 위에서 처리됨
 }

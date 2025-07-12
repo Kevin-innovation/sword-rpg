@@ -126,6 +126,14 @@ export default function EnhanceButton() {
       if (data.newMoney !== undefined) setMoney(data.newMoney);
       if (data.newFragments !== undefined) setFragments(data.newFragments);
       
+      // 아이템 수량 업데이트 (서버에서 받은 업데이트된 수량으로)
+      if (data.updatedItems) {
+        setItems({
+          ...items,
+          ...data.updatedItems
+        });
+      }
+      
       // API 응답 후 즉시 버튼 활성화 (애니메이션은 계속 유지)
       setDisabled(false);
       setIsProcessing(false);

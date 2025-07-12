@@ -60,7 +60,7 @@ BEGIN
   VALUES (p_user_id, item_id, 1, NOW(), NOW())
   ON CONFLICT (user_id, item_id)
   DO UPDATE SET 
-    quantity = inventories.quantity + 1,
+    quantity = EXCLUDED.quantity + inventories.quantity,
     updated_at = NOW();
   
   -- 결과 반환
