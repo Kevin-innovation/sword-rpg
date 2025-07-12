@@ -68,19 +68,26 @@ export default function EnhanceButton() {
     }
     
     try {
-      const data = await apiRequest("/api/enhance", {
+      const response = await fetch("/api/enhance", {
         method: "POST",
-        body: {
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           userId: user.id,
           currentLevel: swordLevel,
           useDoubleChance,
           useProtect,
           useDiscount,
           useFragmentBoost: selectedFragmentBoost
-        },
-        maxRetries: 3,
-        timeout: 8000 // 8초 타임아웃
+        })
       });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`HTTP ${response.status}:`, errorText);
+        throw new Error(`서버 오류 (${response.status})`);
+      }
+      
+      const data = await response.json();
       if (data.error) {
         console.error('API Error:', data.error);
         alert(`오류: ${data.error}`);
@@ -179,15 +186,20 @@ export default function EnhanceButton() {
     setIsSelling(true);
     
     try {
-      const data = await apiRequest('/api/sell', {
+      const response = await fetch('/api/sell', {
         method: 'POST',
-        body: {
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           userId: user.id,
           swordLevel: swordLevel
-        },
-        maxRetries: 2,
-        timeout: 5000
+        })
       });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || '판매 실패');
+      }
       
       // 상태 업데이트
       setMoney(data.newMoney);

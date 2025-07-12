@@ -22,11 +22,6 @@ export async function fetchWithRetry(
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-      console.log(`API Request ${attempt + 1}/${maxRetries + 1}:`, {
-        url,
-        method: fetchOptions.method,
-        headers: fetchOptions.headers
-      });
 
       const response = await fetch(url, {
         ...fetchOptions,

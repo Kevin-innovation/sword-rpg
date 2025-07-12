@@ -51,16 +51,21 @@ const Shop = () => {
     setPurchasing(id);
     
     try {
-      const data = await apiRequest('/api/shop', {
+      const response = await fetch('/api/shop', {
         method: 'POST',
-        body: {
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           userId: user.id,
           itemType: id,
           price: price
-        },
-        maxRetries: 2,
-        timeout: 5000
+        })
       });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || '구매 실패');
+      }
       
       // 상태 업데이트
       setMoney(data.newMoney);

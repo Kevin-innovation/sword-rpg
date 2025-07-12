@@ -49,9 +49,9 @@ export const calculateFragmentsGained = (level: number): number => {
 
 // 조각으로 강화 확률 증가
 export const FRAGMENT_BOOST_OPTIONS = [
-  { fragments: 10, boost: 5, name: "+5% 확률 증가" },
-  { fragments: 20, boost: 10, name: "+10% 확률 증가" },
-  { fragments: 50, boost: 20, name: "+20% 확률 증가" }
+  { fragments: 100, boost: 5, name: "+5% 확률 증가" },
+  { fragments: 200, boost: 10, name: "+10% 확률 증가" },
+  { fragments: 500, boost: 20, name: "+20% 확률 증가" }
 ];
 
 // 조각 사용 가능 여부 확인
