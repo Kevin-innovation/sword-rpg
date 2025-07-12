@@ -79,7 +79,7 @@ export default function EnhanceButton() {
         setResult("success");
         // 성공시 알림창 제거 - 시각적 효과만 표시
       } else {
-        setSwordLevel(0);
+        setSwordLevel(data.newLevel);
         setResult("fail");
         // 실패시 조각 업데이트
         if (data.fragmentsGained > 0) {
@@ -89,6 +89,10 @@ export default function EnhanceButton() {
           alert("강화 실패! 레벨 0으로 초기화");
         }
       }
+      
+      // 돈과 조각 상태 업데이트
+      if (data.newMoney !== undefined) setMoney(data.newMoney);
+      if (data.newFragments !== undefined) setFragments(data.newFragments);
       
     } catch (e) {
       console.error("강화 오류:", e);

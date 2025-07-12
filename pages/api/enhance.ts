@@ -12,18 +12,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const {
     userId,
     currentLevel,
-    money,
-    cost,
-    clientTimestamp,
-    useDoubleChance,
-    useProtect,
-    useDiscount
+    useDoubleChance = false,
+    useProtect = false,
+    useDiscount = false
   } = req.body;
 
-  // 1. 치트 방지 검증
-  const valid = await validateEnhancement(userId, currentLevel, cost, clientTimestamp);
-  if (!valid) {
-    return res.status(400).json({ error: 'Cheating detected' });
+  // 1. 기본 유효성 검증
+  if (!userId || currentLevel === undefined) {
+    return res.status(400).json({ error: 'Invalid parameters' });
   }
 
   // 2. 유저 정보 조회
@@ -49,8 +45,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // 4. 강화 확률 계산 및 결과 결정
   let successRate = calculateEnhanceChance(currentLevel);
   if (useDoubleChance) successRate = Math.min(successRate * 2, 100);
-  let enhanceCost = cost;
-  if (useDiscount) enhanceCost = Math.floor(cost * 0.5);
+  let enhanceCost = calculateEnhanceCost(currentLevel);
+  if (useDiscount) enhanceCost = Math.floor(enhanceCost * 0.5);
   if (user.money < enhanceCost) {
     return res.status(400).json({ error: 'Not enough money' });
   }
@@ -136,5 +132,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     .eq('user_id', userId);
 
   // 9. 응답 반환
-  return res.status(200).json({ ...result, inventory: inventoryRows });
+  return res.status(200).json({ 
+    ...result, 
+    newMoney: user.money - enhanceCost,
+    newFragments: (user.fragments || 0) + (result.fragmentsGained || 0),
+    inventory: inventoryRows 
+  });
 }

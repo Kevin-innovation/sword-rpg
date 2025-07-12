@@ -29,11 +29,7 @@ export default function AuthForm() {
             email: email,
             nickname: user_metadata?.nickname || email?.split('@')[0] || '유저',
             money: 30000,
-            fragments: 0,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }, {
-            onConflict: 'id'
+            fragments: 0
           });
         
         // swords 테이블에 기본 검 레코드 생성 (없으면 생성)
@@ -41,9 +37,7 @@ export default function AuthForm() {
           .from('swords')
           .upsert({
             user_id: id,
-            level: 0,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            level: 0
           }, {
             onConflict: 'user_id'
           });
@@ -75,11 +69,7 @@ export default function AuthForm() {
           email: email,
           nickname: user_metadata?.nickname || email?.split('@')[0] || '유저',
           money: 30000,
-          fragments: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'id'
+          fragments: 0
         });
       
       // swords 테이블에 기본 검 레코드 생성 (없으면 생성)
@@ -87,9 +77,7 @@ export default function AuthForm() {
         .from('swords')
         .upsert({
           user_id: id,
-          level: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          level: 0
         }, {
           onConflict: 'user_id'
         });
@@ -108,7 +96,14 @@ export default function AuthForm() {
       setLoading(false);
       return;
     }
-    const { error, data } = await supabase.auth.signUp({ email, password, options: { data: { nickname } } });
+    const { error, data } = await supabase.auth.signUp({ 
+      email, 
+      password, 
+      options: { 
+        data: { nickname },
+        emailRedirectTo: window.location.origin 
+      } 
+    });
     if (error) setError(error.message);
     if (data.user) {
       const { id, email, user_metadata } = data.user;
@@ -122,11 +117,7 @@ export default function AuthForm() {
           email: email,
           nickname: user_metadata?.nickname || nickname,
           money: 30000,
-          fragments: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'id'
+          fragments: 0
         });
       
       // swords 테이블에 기본 검 레코드 생성
@@ -134,9 +125,7 @@ export default function AuthForm() {
         .from('swords')
         .upsert({
           user_id: id,
-          level: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          level: 0
         }, {
           onConflict: 'user_id'
         });
