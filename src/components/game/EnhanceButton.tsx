@@ -98,16 +98,21 @@ export default function EnhanceButton() {
       if (data.newMoney !== undefined) setMoney(data.newMoney);
       if (data.newFragments !== undefined) setFragments(data.newFragments);
       
+      // API 응답 후 즉시 버튼 활성화 (애니메이션은 계속 유지)
+      setDisabled(false);
+      
     } catch (e) {
       console.error("강화 오류:", e);
       alert("서버 통신 오류");
+      setDisabled(false);
+      setAnim(false);
     }
     
+    // 애니메이션만 250ms 후 종료 (빠른 반응)
     setTimeout(() => {
       setAnim(false);
-      setDisabled(false);
       setResult(null);
-    }, 1200);
+    }, 250);
   };
 
   const sellPrice = calculateSwordSellPrice(swordLevel);
