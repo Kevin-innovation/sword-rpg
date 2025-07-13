@@ -76,16 +76,16 @@ export default function EnhanceButton() {
     setGaugeProgress(0);
     setGaugeResult(null);
     
-    // 게이지가 빠르게 올라가는 애니메이션 (0.5초)
+    // 게이지가 매우 빠르게 올라가는 애니메이션 (0.2초)
     const gaugeInterval = setInterval(() => {
       setGaugeProgress(prev => {
         if (prev >= 100) {
           clearInterval(gaugeInterval);
           return 100;
         }
-        return prev + 8; // 12.5번에 걸쳐 100%까지 (2배 빠르게)
+        return prev + 20; // 5번에 걸쳐 100%까지 (매우 빠르게)
       });
-    }, 20); // 20ms마다 업데이트 (2배 빠르게)
+    }, 10); // 10ms마다 업데이트 (매우 빠르게)
     
     try {
       const response = await fetch("/api/enhance", {
@@ -129,13 +129,13 @@ export default function EnhanceButton() {
           }
           // 성공시 랭킹 새로고침 트리거
           refreshRanking();
-        }, 50); // 500ms -> 50ms로 단축
+        }, 10); // 500ms -> 10ms로 단축
       } else {
         setGaugeResult('fail');
         // 실패 시 빠른 게이지 급락 후 결과 처리
         setTimeout(() => {
           setGaugeProgress(0); // 게이지 급락
-        }, 25); // 200ms -> 25ms로 단축
+        }, 5); // 200ms -> 5ms로 단축
         setTimeout(() => {
           setSwordLevel(data.newLevel);
           setResult("fail");
@@ -146,7 +146,7 @@ export default function EnhanceButton() {
           } else {
             alert("강화 실패! 레벨 0으로 초기화");
           }
-        }, 75); // 700ms -> 75ms로 단축
+        }, 15); // 700ms -> 15ms로 단축
       }
       
       // 돈과 조각 상태 업데이트
@@ -195,7 +195,7 @@ export default function EnhanceButton() {
       setGaugeResult(null);
       setAnim(false);
       setResult(null);
-    }, 800); // 2000ms -> 800ms로 단축
+    }, 300); // 2000ms -> 300ms로 단축
   };
 
   const handleEnhance = () => {
@@ -301,7 +301,6 @@ export default function EnhanceButton() {
         </div>
         
         <motion.button
-          whileTap={{ scale: 0.98 }}
           className={`w-full relative p-5 md:p-6 rounded-2xl font-bold text-lg md:text-xl shadow-2xl transition-all duration-150 select-none overflow-hidden
             ${result === "success" 
               ? "bg-gradient-to-r from-green-400 to-emerald-500 text-white" 

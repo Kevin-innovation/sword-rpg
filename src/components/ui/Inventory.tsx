@@ -24,6 +24,7 @@ const Inventory = () => {
   useEffect(() => {
     if (user?.id) {
       console.log('인벤토리: 사용자 변경 감지, 업적 로드 시작:', user.id);
+      console.log('현재 foundSwords 상태:', foundSwords);
       // 지연 시간을 짧게 하여 빠른 동기화
       setTimeout(() => {
         loadUserAchievements(user.id);
@@ -82,7 +83,12 @@ const Inventory = () => {
         </button>
       </div>
       <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-7 gap-3 md:gap-4">
-        {foundSwords.map((found, i) => (
+        {foundSwords.map((found, i) => {
+          // 디버깅을 위한 로그 (4번과 6번 검만)
+          if (i === 4 || i === 6) {
+            console.log(`검 +${i} 상태:`, { found, imagePath: swordImgs[i] });
+          }
+          return (
           <div key={i} className="relative aspect-square bg-gradient-to-b from-slate-50 to-slate-100 border-2 border-dashed border-slate-300 rounded-xl flex flex-col items-center justify-center p-2 md:p-3 overflow-hidden">
             {found ? (
               <>
@@ -103,7 +109,8 @@ const Inventory = () => {
               <span className="text-3xl md:text-4xl text-slate-300">?</span>
             )}
           </div>
-        ))}
+        )})}
+        
       </div>
       
       <div className="mt-4 pt-4 border-t border-slate-200">
