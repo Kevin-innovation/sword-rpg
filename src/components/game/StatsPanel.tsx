@@ -45,7 +45,7 @@ export default function StatsPanel() {
   return (
     <div className="grid grid-cols-2 gap-3 w-full">
       {stats.map((stat, index) => (
-        <div key={index} className={`${stat.bgColor} rounded-2xl p-4 border border-white/50 shadow-lg backdrop-blur-sm relative overflow-hidden group hover:scale-105 transition-all duration-300`}>
+        <div key={index} className={`${stat.bgColor} rounded-2xl p-4 border border-white/50 shadow-lg backdrop-blur-sm relative overflow-hidden group transition-all duration-300`}>
           {/* 글로우 효과 */}
           <div className={`absolute inset-0 bg-gradient-to-r ${stat.color} opacity-5 rounded-2xl`}></div>
           

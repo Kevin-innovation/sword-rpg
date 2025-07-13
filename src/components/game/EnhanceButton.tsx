@@ -55,8 +55,8 @@ export default function EnhanceButton() {
   const handleEnhanceInternal = async () => {
     const now = Date.now();
     
-    // 중복 요청 완전 차단 + 50ms 디바운싱으로 단축
-    if (disabled || isProcessing || (now - lastClickTime < 50)) return;
+    // 중복 요청 완전 차단 + 10ms 디바운싱으로 단축
+    if (disabled || isProcessing || (now - lastClickTime < 10)) return;
     
     setLastClickTime(now);
     setIsProcessing(true);
@@ -76,16 +76,16 @@ export default function EnhanceButton() {
     setGaugeProgress(0);
     setGaugeResult(null);
     
-    // 게이지가 빠르게 올라가는 애니메이션 (1초)
+    // 게이지가 빠르게 올라가는 애니메이션 (0.5초)
     const gaugeInterval = setInterval(() => {
       setGaugeProgress(prev => {
         if (prev >= 100) {
           clearInterval(gaugeInterval);
           return 100;
         }
-        return prev + 4; // 25번에 걸쳐 100%까지
+        return prev + 8; // 12.5번에 걸쳐 100%까지 (2배 빠르게)
       });
-    }, 40); // 40ms마다 업데이트
+    }, 20); // 20ms마다 업데이트 (2배 빠르게)
     
     try {
       const response = await fetch("/api/enhance", {
@@ -129,13 +129,13 @@ export default function EnhanceButton() {
           }
           // 성공시 랭킹 새로고침 트리거
           refreshRanking();
-        }, 200); // 500ms -> 200ms로 단축
+        }, 50); // 500ms -> 50ms로 단축
       } else {
         setGaugeResult('fail');
         // 실패 시 빠른 게이지 급락 후 결과 처리
         setTimeout(() => {
           setGaugeProgress(0); // 게이지 급락
-        }, 100); // 200ms -> 100ms로 단축
+        }, 25); // 200ms -> 25ms로 단축
         setTimeout(() => {
           setSwordLevel(data.newLevel);
           setResult("fail");
@@ -146,7 +146,7 @@ export default function EnhanceButton() {
           } else {
             alert("강화 실패! 레벨 0으로 초기화");
           }
-        }, 300); // 700ms -> 300ms로 단축
+        }, 75); // 700ms -> 75ms로 단축
       }
       
       // 돈과 조각 상태 업데이트
@@ -195,7 +195,7 @@ export default function EnhanceButton() {
       setGaugeResult(null);
       setAnim(false);
       setResult(null);
-    }, 1500); // 2000ms -> 1500ms로 단축
+    }, 800); // 2000ms -> 800ms로 단축
   };
 
   const handleEnhance = () => {
@@ -273,41 +273,42 @@ export default function EnhanceButton() {
       </div>
 
       <div className="w-full flex flex-col gap-2 md:gap-3">
-        {/* 강화 게이지 애니메이션 */}
-        {showGauge && (
-          <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden relative">
-            <div 
-              className={`h-full transition-all duration-200 rounded-full ${
-                gaugeResult === 'success' 
-                  ? 'bg-gradient-to-r from-green-400 to-green-600' 
-                  : gaugeResult === 'fail'
-                    ? 'bg-gradient-to-r from-red-400 to-red-600'
-                    : 'bg-gradient-to-r from-blue-400 to-purple-600'
-              }`}
-              style={{ width: `${gaugeProgress}%` }}
-            />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-xs font-bold text-white drop-shadow">
-                {gaugeResult === 'success' ? '성공!' : gaugeResult === 'fail' ? '실패!' : '강화 중...'}
-              </span>
-            </div>
-            {/* 반짝이는 효과 */}
-            {gaugeProgress > 0 && gaugeResult === null && (
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
-            )}
+        {/* 강화 게이지 애니메이션 - 항상 표시 */}
+        <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden relative">
+          <div 
+            className={`h-full transition-all duration-200 rounded-full ${
+              gaugeResult === 'success' 
+                ? 'bg-gradient-to-r from-green-400 to-green-600' 
+                : gaugeResult === 'fail'
+                  ? 'bg-gradient-to-r from-red-400 to-red-600'
+                  : showGauge
+                    ? 'bg-gradient-to-r from-blue-400 to-purple-600'
+                    : 'bg-gradient-to-r from-gray-300 to-gray-400'
+            }`}
+            style={{ width: showGauge ? `${gaugeProgress}%` : '0%' }}
+          />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-xs font-bold text-white drop-shadow">
+              {gaugeResult === 'success' ? '성공!' : 
+               gaugeResult === 'fail' ? '실패!' : 
+               showGauge ? '강화 중...' : '강화 전'}
+            </span>
           </div>
-        )}
+          {/* 반짝이는 효과 */}
+          {gaugeProgress > 0 && gaugeResult === null && showGauge && (
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
+          )}
+        </div>
         
         <motion.button
-          whileTap={{ scale: 0.95 }}
-          whileHover={{ scale: 1.02 }}
-          className={`w-full relative p-5 md:p-6 rounded-2xl font-bold text-lg md:text-xl shadow-2xl transition-all duration-300 select-none overflow-hidden group
+          whileTap={{ scale: 0.98 }}
+          className={`w-full relative p-5 md:p-6 rounded-2xl font-bold text-lg md:text-xl shadow-2xl transition-all duration-150 select-none overflow-hidden
             ${result === "success" 
               ? "bg-gradient-to-r from-green-400 to-emerald-500 text-white" 
               : result === "fail" 
                 ? "bg-gradient-to-r from-red-400 to-red-500 text-white"
                 : canAfford
-                  ? "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600"
+                  ? "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white"
                   : "bg-gradient-to-r from-gray-300 to-gray-400 text-gray-600"
             }
             ${disabled ? "cursor-not-allowed" : "cursor-pointer"}
@@ -315,8 +316,7 @@ export default function EnhanceButton() {
           onClick={handleEnhance}
           disabled={disabled || !canAfford}
         >
-          {/* 배경 효과 */}
-          <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          {/* 배경 효과 - 호버 제거 */}
           
           {/* 스파크 효과 */}
           {anim && (
