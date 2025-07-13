@@ -3,6 +3,7 @@ import type { AppProps } from 'next/app';
 import { useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useGameState } from '@/store/useGameState';
+import { Analytics } from '@vercel/analytics/react';
 
 export default function App({ Component, pageProps }: AppProps) {
   const setUser = useGameState((state) => state.setUser);
@@ -34,5 +35,10 @@ export default function App({ Component, pageProps }: AppProps) {
     return () => subscription.unsubscribe();
   }, [setUser, reset]);
 
-  return <Component {...pageProps} />;
+  return (
+    <>
+      <Component {...pageProps} />
+      <Analytics />
+    </>
+  );
 } 
