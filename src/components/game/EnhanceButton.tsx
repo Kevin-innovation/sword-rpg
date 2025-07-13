@@ -93,7 +93,7 @@ export default function EnhanceButton() {
         })
       });
     
-    // 동시에 게이지 애니메이션 시작 (적응형 속도)
+    // 게이지 애니메이션 (1초 내외 완료)
     let gaugeCompleted = false;
     const gaugeInterval = setInterval(() => {
       setGaugeProgress(prev => {
@@ -102,21 +102,31 @@ export default function EnhanceButton() {
           gaugeCompleted = true;
           return 100;
         }
-        // API 응답 시간에 따라 적응적 속도 조절
-        const elapsed = Date.now() - apiStartTime;
-        const targetSpeed = elapsed > 100 ? 30 : 15; // API 늦으면 빠르게
-        return prev + targetSpeed;
+        // 1초 내외 완료를 위한 속도 조절 (100% / 100번 = 1초)
+        return prev + 1; // 1%씩 증가
       });
-    }, 8); // 8ms마다 업데이트 (더 부드럽게)
+    }, 10); // 10ms마다 업데이트 (1초 완료)
     
     try {
       const response = await apiPromise;
       
-      // API 응답 즉시 게이지 완료 처리
-      if (!gaugeCompleted) {
-        clearInterval(gaugeInterval);
-        setGaugeProgress(100);
-      }
+      // API 응답을 받으면 게이지가 완료될 때까지 대기
+      const waitForGauge = () => {
+        return new Promise<void>((resolve) => {
+          if (gaugeCompleted) {
+            resolve();
+          } else {
+            const checkInterval = setInterval(() => {
+              if (gaugeCompleted) {
+                clearInterval(checkInterval);
+                resolve();
+              }
+            }, 10);
+          }
+        });
+      };
+      
+      await waitForGauge(); // 게이지 완료까지 대기
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -133,32 +143,38 @@ export default function EnhanceButton() {
         return;
       }
       
-      // 🚀 즉시 결과 표시 (딜레이 제거)
+      // 🎯 게이지 완료 후 결과 표시 (1초 내외)
       if (data.success) {
         setGaugeResult('success');
-        // 즉시 결과 처리 (딜레이 제거)
-        setSwordLevel(data.newLevel);
-        setResult("success");
-        // 성공시 업적 실시간 업데이트
-        if (user?.id) {
-          loadUserAchievements(user.id);
-        }
-        // 성공시 랭킹 새로고침 트리거
-        refreshRanking();
+        // 성공 결과를 잠깐 보여준 후 상태 업데이트
+        setTimeout(() => {
+          setSwordLevel(data.newLevel);
+          setResult("success");
+          // 성공시 업적 실시간 업데이트
+          if (user?.id) {
+            loadUserAchievements(user.id);
+          }
+          // 성공시 랭킹 새로고침 트리거
+          refreshRanking();
+        }, 300); // 성공 게이지를 300ms 보여주기
       } else {
         setGaugeResult('fail');
-        // 즉시 실패 처리
-        setSwordLevel(data.newLevel);
-        setResult("fail");
-        // 게이지 급락 효과 (시각적 피드백만)
-        setTimeout(() => setGaugeProgress(0), 1);
-        // 실패시 조각 업데이트
-        if (data.fragmentsGained > 0) {
-          setFragments(data.newFragments);
-          alert(`강화 실패! 레벨 0으로 초기화되었지만 조각 ${data.fragmentsGained}개를 획득했습니다.`);
-        } else {
-          alert("강화 실패! 레벨 0으로 초기화");
-        }
+        // 실패 게이지 급락 효과
+        setTimeout(() => {
+          setGaugeProgress(0); // 게이지 급락
+        }, 200);
+        // 실패 결과를 잠깐 보여준 후 상태 업데이트
+        setTimeout(() => {
+          setSwordLevel(data.newLevel);
+          setResult("fail");
+          // 실패시 조각 업데이트
+          if (data.fragmentsGained > 0) {
+            setFragments(data.newFragments);
+            alert(`강화 실패! 레벨 0으로 초기화되었지만 조각 ${data.fragmentsGained}개를 획득했습니다.`);
+          } else {
+            alert("강화 실패! 레벨 0으로 초기화");
+          }
+        }, 500); // 실패 게이지를 500ms 보여주기
       }
       
       // 돈과 조각 상태 업데이트
@@ -207,7 +223,7 @@ export default function EnhanceButton() {
       setGaugeResult(null);
       setAnim(false);
       setResult(null);
-    }, 150); // 300ms -> 150ms로 추가 단축
+    }, 1200); // 전체 프로세스 후 1.2초 후 정리
   };
 
   const handleEnhance = () => {
