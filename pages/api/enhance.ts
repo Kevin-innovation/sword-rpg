@@ -41,12 +41,52 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { data: userData, error: userError } = userResult;
   const { data: swordData, error: swordError } = swordResult;
 
-  const user = userData?.[0];
-  const sword = swordData?.[0];
+  let user = userData?.[0];
+  let sword = swordData?.[0];
 
   if (userError || !user) {
-    console.error('User not found:', { userId, userError });
-    return res.status(404).json({ error: 'User not found' });
+    console.error('User not found, attempting to create:', { userId, userError });
+    
+    // 사용자가 없으면 즉시 생성 시도
+    try {
+      const { data: newUser, error: createUserError } = await supabase
+        .from('users')
+        .insert({
+          id: userId,
+          email: 'temp@example.com',
+          nickname: '임시유저',
+          money: 200000,
+          fragments: 0
+        })
+        .select()
+        .single();
+      
+      if (!createUserError && newUser) {
+        console.log('User created successfully:', newUser);
+        user = newUser;
+        
+        // 검도 생성
+        const { data: newSword } = await supabase
+          .from('swords')
+          .insert({
+            user_id: userId,
+            level: currentLevel || 0
+          })
+          .select()
+          .single();
+        
+        if (newSword) {
+          console.log('Sword created successfully:', newSword);
+          sword = newSword;
+        }
+      } else {
+        console.error('Failed to create user:', createUserError);
+        return res.status(404).json({ error: 'User not found and creation failed' });
+      }
+    } catch (err) {
+      console.error('Error creating user:', err);
+      return res.status(404).json({ error: 'User not found' });
+    }
   }
   if (swordError || !sword) {
     console.error('Sword not found:', { userId, swordError });
