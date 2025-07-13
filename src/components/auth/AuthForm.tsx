@@ -22,7 +22,7 @@ export default function AuthForm() {
         setUser({ id, email, nickname: user_metadata?.nickname });
         
         // users 테이블에 사용자 레코드 생성/업데이트 (닉네임 우선 처리)
-        const { error } = await supabase
+        const { error: userError } = await supabase
           .from('users')
           .upsert({
             id: id,
@@ -35,8 +35,12 @@ export default function AuthForm() {
             ignoreDuplicates: false
           });
         
+        if (userError) {
+          console.error('사용자 생성 오류:', userError);
+        }
+        
         // swords 테이블에 기본 검 레코드 생성 (없으면 생성)
-        await supabase
+        const { error: swordError } = await supabase
           .from('swords')
           .upsert({
             user_id: id,
@@ -44,6 +48,24 @@ export default function AuthForm() {
           }, {
             onConflict: 'user_id'
           });
+        
+        if (swordError) {
+          console.error('검 생성 오류:', swordError);
+        }
+        
+        // user_achievements 테이블에 기본 업적 레코드 생성
+        const { error: achievementError } = await supabase
+          .from('user_achievements')
+          .upsert({
+            user_id: id,
+            unlocked_swords: ['0']
+          }, {
+            onConflict: 'user_id'
+          });
+        
+        if (achievementError) {
+          console.error('업적 생성 오류:', achievementError);
+        }
         
         // _app.tsx에서 자동으로 상태 관리하므로 리다이렉트 제거
       }
@@ -65,21 +87,23 @@ export default function AuthForm() {
       setUser({ id, email, nickname: user_metadata?.nickname });
       
       // users 테이블에 사용자 레코드 생성/업데이트 (닉네임 우선 처리)
-      await supabase
+      const { error: userError } = await supabase
         .from('users')
         .upsert({
           id: id,
           email: email,
           nickname: user_metadata?.nickname || email?.split('@')[0] || '유저',
-          money: 30000,
+          money: 200000,
           fragments: 0
         }, {
           onConflict: 'id',
           ignoreDuplicates: false
         });
       
+      if (userError) console.error('사용자 생성 오류:', userError);
+      
       // swords 테이블에 기본 검 레코드 생성 (없으면 생성)
-      await supabase
+      const { error: swordError } = await supabase
         .from('swords')
         .upsert({
           user_id: id,
@@ -87,6 +111,20 @@ export default function AuthForm() {
         }, {
           onConflict: 'user_id'
         });
+      
+      if (swordError) console.error('검 생성 오류:', swordError);
+      
+      // user_achievements 테이블에 기본 업적 레코드 생성
+      const { error: achievementError } = await supabase
+        .from('user_achievements')
+        .upsert({
+          user_id: id,
+          unlocked_swords: ['0']
+        }, {
+          onConflict: 'user_id'
+        });
+      
+      if (achievementError) console.error('업적 생성 오류:', achievementError);
       
       // _app.tsx에서 자동으로 상태 관리하므로 리다이렉트 제거
     }
@@ -116,21 +154,23 @@ export default function AuthForm() {
       setUser({ id, email, nickname: user_metadata?.nickname });
       
       // users 테이블에 사용자 레코드 생성 (닉네임 우선 처리)
-      await supabase
+      const { error: userError } = await supabase
         .from('users')
         .upsert({
           id: id,
           email: email,
           nickname: user_metadata?.nickname || nickname,
-          money: 30000,
+          money: 200000,
           fragments: 0
         }, {
           onConflict: 'id',
           ignoreDuplicates: false
         });
       
+      if (userError) console.error('사용자 생성 오류:', userError);
+      
       // swords 테이블에 기본 검 레코드 생성
-      await supabase
+      const { error: swordError } = await supabase
         .from('swords')
         .upsert({
           user_id: id,
@@ -138,6 +178,20 @@ export default function AuthForm() {
         }, {
           onConflict: 'user_id'
         });
+      
+      if (swordError) console.error('검 생성 오류:', swordError);
+      
+      // user_achievements 테이블에 기본 업적 레코드 생성
+      const { error: achievementError } = await supabase
+        .from('user_achievements')
+        .upsert({
+          user_id: id,
+          unlocked_swords: ['0']
+        }, {
+          onConflict: 'user_id'
+        });
+      
+      if (achievementError) console.error('업적 생성 오류:', achievementError);
       
       // _app.tsx에서 자동으로 상태 관리하므로 리다이렉트 제거
     }
