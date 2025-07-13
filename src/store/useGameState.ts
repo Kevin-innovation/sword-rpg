@@ -128,6 +128,21 @@ export const useGameState = create<GameState>((set, get) => ({
         set({ foundSwords });
       } else if (error?.code === 'PGRST116') {
         // 데이터가 없으면 기본값 설정 (에러 무시)
+        console.log('No achievement data found for user, setting defaults:', userId);
+        const defaultSwords = Array(21).fill(false);
+        defaultSwords[0] = true;
+        achievementCache.set(userId, { data: defaultSwords, timestamp: now });
+        set({ foundSwords: defaultSwords });
+      } else if (error) {
+        // 다른 종류의 에러 로깅
+        console.error('Achievement load error:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          userId: userId
+        });
+        // 에러 발생시에도 기본값 설정
         const defaultSwords = Array(21).fill(false);
         defaultSwords[0] = true;
         achievementCache.set(userId, { data: defaultSwords, timestamp: now });

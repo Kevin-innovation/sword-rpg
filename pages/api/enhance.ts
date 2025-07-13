@@ -242,23 +242,48 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           
           if (!currentUnlocked.includes(newLevelString)) {
             const updatedUnlocked = [...currentUnlocked, newLevelString];
-            await supabase
-              .from('user_achievements')
-              .update({ 
-                unlocked_swords: updatedUnlocked,
-                updated_at: new Date().toISOString()
-              })
-              .eq('user_id', userId);
+            const updateData: any = { 
+              unlocked_swords: updatedUnlocked 
+            };
+            
+            // updated_at 컬럼이 존재할 때만 추가
+            try {
+              updateData.updated_at = new Date().toISOString();
+              await supabase
+                .from('user_achievements')
+                .update(updateData)
+                .eq('user_id', userId);
+            } catch (updateError) {
+              // updated_at 컬럼 에러가 발생하면 updated_at 없이 재시도
+              console.warn('Achievement update with updated_at failed, retrying without it:', updateError);
+              delete updateData.updated_at;
+              await supabase
+                .from('user_achievements')
+                .update(updateData)
+                .eq('user_id', userId);
+            }
           }
         } else {
-          await supabase
-            .from('user_achievements')
-            .insert({
-              user_id: userId,
-              unlocked_swords: ['0', result.newLevel.toString()],
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            });
+          // 새 레코드 생성 시에도 updated_at 컬럼 존재 여부에 따라 처리
+          const insertData: any = {
+            user_id: userId,
+            unlocked_swords: ['0', result.newLevel.toString()],
+            created_at: new Date().toISOString(),
+          };
+          
+          try {
+            insertData.updated_at = new Date().toISOString();
+            await supabase
+              .from('user_achievements')
+              .insert(insertData);
+          } catch (insertError) {
+            // updated_at 컬럼 에러가 발생하면 updated_at 없이 재시도
+            console.warn('Achievement insert with updated_at failed, retrying without it:', insertError);
+            delete insertData.updated_at;
+            await supabase
+              .from('user_achievements')
+              .insert(insertData);
+          }
         }
       } catch (err) {
         console.error('Achievement update error:', err);
