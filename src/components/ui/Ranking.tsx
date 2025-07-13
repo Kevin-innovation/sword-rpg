@@ -10,9 +10,16 @@ const Ranking = () => {
         <button
           onClick={refreshRanking}
           disabled={isLoading}
-          className="px-3 py-1 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          className="px-3 py-1 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all min-w-[60px]"
         >
-          {isLoading ? '로딩...' : '새로고침'}
+          {isLoading ? (
+            <div className="flex items-center justify-center gap-1">
+              <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+              <span>로딩</span>
+            </div>
+          ) : (
+            '새로고침'
+          )}
         </button>
       </div>
       <table className="w-full text-sm md:text-base text-center">
@@ -25,16 +32,7 @@ const Ranking = () => {
           </tr>
         </thead>
         <tbody>
-          {isLoading ? (
-            <tr>
-              <td colSpan={4} className="py-4 text-center text-slate-400">
-                <div className="flex items-center justify-center gap-2">
-                  <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                  랭킹 로딩 중...
-                </div>
-              </td>
-            </tr>
-          ) : ranking.length === 0 ? (
+          {ranking.length === 0 && !isLoading ? (
             <tr>
               <td colSpan={4} className="py-4 text-center text-slate-400">
                 랭킹 데이터가 없습니다
@@ -42,7 +40,7 @@ const Ranking = () => {
             </tr>
           ) : (
             ranking.map((entry, idx) => (
-              <tr key={`${entry.nickname}-${idx}`} className={idx === 0 ? "bg-yellow-100 font-bold" : ""}>
+              <tr key={`${entry.nickname}-${idx}`} className={`${idx === 0 ? "bg-yellow-100 font-bold" : ""} ${isLoading ? "opacity-50" : ""}`}>
                 <td className="py-2 md:py-3">
                   {idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : idx + 1}
                 </td>
@@ -51,6 +49,16 @@ const Ranking = () => {
                 <td className="py-2 md:py-3">{entry.totalGold.toLocaleString()} G</td>
               </tr>
             ))
+          )}
+          {isLoading && ranking.length === 0 && (
+            <tr>
+              <td colSpan={4} className="py-4 text-center text-slate-400">
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                  랭킹 로딩 중...
+                </div>
+              </td>
+            </tr>
           )}
         </tbody>
       </table>
