@@ -45,9 +45,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const sword = swordData?.[0];
 
   if (userError || !user) {
+    console.error('User not found:', { userId, userError });
     return res.status(404).json({ error: 'User not found' });
   }
   if (swordError || !sword) {
+    console.error('Sword not found:', { userId, swordError });
     return res.status(404).json({ error: 'Sword not found' });
   }
 
