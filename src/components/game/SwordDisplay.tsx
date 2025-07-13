@@ -2,6 +2,28 @@ import React, { useEffect, useRef } from "react";
 import { useGameState } from "@/store/useGameState";
 import { motion, useAnimation } from "framer-motion";
 
+// CSS 애니메이션 정의
+const particleStyles = `
+  @keyframes convergeIn {
+    0% {
+      transform: rotate(var(--rotation)) translateY(var(--distance)) translate(-50%, -50%) scale(0);
+      opacity: 0;
+    }
+    20% {
+      opacity: 1;
+      transform: rotate(var(--rotation)) translateY(var(--distance)) translate(-50%, -50%) scale(1);
+    }
+    80% {
+      opacity: 1;
+      transform: rotate(var(--rotation)) translateY(-8px) translate(-50%, -50%) scale(0.8);
+    }
+    100% {
+      opacity: 0;
+      transform: rotate(var(--rotation)) translateY(0px) translate(-50%, -50%) scale(0);
+    }
+  }
+`;
+
 export default function SwordDisplay() {
   const swordLevel = useGameState((s) => s.swordLevel);
   const prevLevel = useRef(swordLevel);
@@ -143,19 +165,86 @@ export default function SwordDisplay() {
               }}
             />
           </div>
-          {/* 강화 성공시 파티클 효과 */}
+          {/* CSS 스타일 주입 */}
+          <style dangerouslySetInnerHTML={{ __html: particleStyles }} />
+          
+          {/* 강화 성공시 파티클 효과 - 안쪽으로 모이는 효과 */}
           {swordLevel > 0 && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{overflow: 'visible'}}>
-              {Array.from({ length: 6 }).map((_, i) => (
+              {/* 기본 파티클 - 안쪽으로 모이는 애니메이션 */}
+              {Array.from({ length: 16 }).map((_, i) => (
                 <div
-                  key={i}
-                  className="absolute w-2 h-2 bg-yellow-400 rounded-full animate-ping"
+                  key={`basic-${i}`}
+                  className={`absolute w-1.5 h-1.5 rounded-full ${
+                    swordLevel >= 18 ? 'bg-purple-400' :
+                    swordLevel >= 15 ? 'bg-violet-400' :
+                    swordLevel >= 10 ? 'bg-blue-400' :
+                    swordLevel >= 5 ? 'bg-green-400' :
+                    'bg-yellow-400'
+                  }`}
                   style={{
-                    animationDelay: `${i * 0.1}s`,
                     left: '50%',
                     top: '50%',
-                    transform: `rotate(${i * 60}deg) translateY(-48px) translate(-50%, -50%)`,
-                  }}
+                    '--rotation': `${i * 22.5}deg`,
+                    '--distance': '-64px',
+                    animation: `convergeIn 4s infinite ease-in-out`,
+                    animationDelay: `${i * 0.2}s`
+                  } as React.CSSProperties}
+                ></div>
+              ))}
+              
+              {/* 고급 파티클 (레벨 5+) - 더 촘촘하게 */}
+              {swordLevel >= 5 && Array.from({ length: 24 }).map((_, i) => (
+                <div
+                  key={`advanced-${i}`}
+                  className={`absolute w-1 h-1 rounded-full opacity-80 ${
+                    swordLevel >= 18 ? 'bg-purple-300' :
+                    swordLevel >= 15 ? 'bg-violet-300' :
+                    swordLevel >= 10 ? 'bg-blue-300' :
+                    'bg-green-300'
+                  }`}
+                  style={{
+                    left: '50%',
+                    top: '50%',
+                    '--rotation': `${i * 15}deg`,
+                    '--distance': '-80px',
+                    animation: `convergeIn 5s infinite ease-in-out`,
+                    animationDelay: `${i * 0.15}s`
+                  } as React.CSSProperties}
+                ></div>
+              ))}
+              
+              {/* 전설 파티클 (레벨 15+) */}
+              {swordLevel >= 15 && Array.from({ length: 32 }).map((_, i) => (
+                <div
+                  key={`legendary-${i}`}
+                  className={`absolute w-2 h-2 rounded-full ${
+                    swordLevel >= 18 ? 'bg-purple-500' : 'bg-violet-500'
+                  }`}
+                  style={{
+                    left: '50%',
+                    top: '50%',
+                    '--rotation': `${i * 11.25}deg`,
+                    '--distance': '-96px',
+                    animation: `convergeIn 6s infinite ease-in-out`,
+                    animationDelay: `${i * 0.12}s`
+                  } as React.CSSProperties}
+                ></div>
+              ))}
+              
+              {/* 신화 파티클 (레벨 20+) - 가장 촘촘하게 */}
+              {swordLevel >= 20 && Array.from({ length: 48 }).map((_, i) => (
+                <div
+                  key={`mythic-${i}`}
+                  className="absolute w-0.5 h-3 bg-gradient-to-t from-purple-500 via-pink-400 to-yellow-300 rounded-full"
+                  style={{
+                    left: '50%',
+                    top: '50%',
+                    '--rotation': `${i * 7.5}deg`,
+                    '--distance': '-112px',
+                    animation: `convergeIn 7s infinite ease-in-out`,
+                    animationDelay: `${i * 0.1}s`
+                  } as React.CSSProperties}
                 ></div>
               ))}
             </div>
@@ -204,14 +293,6 @@ export default function SwordDisplay() {
           {swordLevel >= 10 && (
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-ping"></div>
           )}
-        </div>
-        <div className={`text-xs mt-1 font-semibold ${
-          swordLevel >= 15 ? 'text-purple-400' :
-          swordLevel >= 10 ? 'text-blue-400' :
-          swordLevel >= 5 ? 'text-green-400' :
-          'text-orange-400'
-        }`}>
-          {swordLevel % 5 + 1}/5 단계
         </div>
       </motion.div>
     </div>

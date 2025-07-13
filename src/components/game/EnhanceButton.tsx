@@ -76,16 +76,16 @@ export default function EnhanceButton() {
     setGaugeProgress(0);
     setGaugeResult(null);
     
-    // 게이지가 천천히 올라가는 애니메이션 (1.5초)
+    // 게이지가 빠르게 올라가는 애니메이션 (1초)
     const gaugeInterval = setInterval(() => {
       setGaugeProgress(prev => {
         if (prev >= 100) {
           clearInterval(gaugeInterval);
           return 100;
         }
-        return prev + 2; // 50번에 걸쳐 100%까지
+        return prev + 4; // 25번에 걸쳐 100%까지
       });
-    }, 30); // 30ms마다 업데이트
+    }, 40); // 40ms마다 업데이트
     
     try {
       const response = await fetch("/api/enhance", {
@@ -116,10 +116,10 @@ export default function EnhanceButton() {
         return;
       }
       
-      // 게이지 애니메이션 결과 표시
+      // 게이지 애니메이션 결과 표시 - 딜레이 최적화
       if (data.success) {
         setGaugeResult('success');
-        // 성공 시 게이지 완료 후 결과 처리
+        // 성공 시 빠른 결과 처리
         setTimeout(() => {
           setSwordLevel(data.newLevel);
           setResult("success");
@@ -129,13 +129,13 @@ export default function EnhanceButton() {
           }
           // 성공시 랭킹 새로고침 트리거
           refreshRanking();
-        }, 500);
+        }, 200); // 500ms -> 200ms로 단축
       } else {
         setGaugeResult('fail');
-        // 실패 시 게이지가 급락한 후 결과 처리
+        // 실패 시 빠른 게이지 급락 후 결과 처리
         setTimeout(() => {
           setGaugeProgress(0); // 게이지 급락
-        }, 200);
+        }, 100); // 200ms -> 100ms로 단축
         setTimeout(() => {
           setSwordLevel(data.newLevel);
           setResult("fail");
@@ -146,7 +146,7 @@ export default function EnhanceButton() {
           } else {
             alert("강화 실패! 레벨 0으로 초기화");
           }
-        }, 700);
+        }, 300); // 700ms -> 300ms로 단축
       }
       
       // 돈과 조각 상태 업데이트
@@ -188,14 +188,14 @@ export default function EnhanceButton() {
       setIsProcessing(false);
     }
     
-    // 게이지 애니메이션과 기존 애니메이션 종료 처리
+    // 게이지 애니메이션과 기존 애니메이션 종료 처리 - 빠르게 정리
     setTimeout(() => {
       setShowGauge(false);
       setGaugeProgress(0);
       setGaugeResult(null);
       setAnim(false);
       setResult(null);
-    }, 2000); // 게이지 애니메이션이 완료된 후 정리
+    }, 1500); // 2000ms -> 1500ms로 단축
   };
 
   const handleEnhance = () => {
