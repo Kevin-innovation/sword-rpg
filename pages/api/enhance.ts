@@ -32,14 +32,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'Invalid parameters' });
   }
 
-  // 2. 유저 및 검 정보 병렬 조회 (성능 개선)
+  // 2. 유저 및 검 정보 병렬 조회 (성능 개선, .single() 대신 배열 접근)
   const [userResult, swordResult] = await Promise.all([
-    supabase.from('users').select('*').eq('id', userId).single(),
-    supabase.from('swords').select('*').eq('user_id', userId).single()
+    supabase.from('users').select('*').eq('id', userId).limit(1),
+    supabase.from('swords').select('*').eq('user_id', userId).limit(1)
   ]);
 
-  const { data: user, error: userError } = userResult;
-  const { data: sword, error: swordError } = swordResult;
+  const { data: userData, error: userError } = userResult;
+  const { data: swordData, error: swordError } = swordResult;
+
+  const user = userData?.[0];
+  const sword = swordData?.[0];
 
   if (userError || !user) {
     return res.status(404).json({ error: 'User not found' });

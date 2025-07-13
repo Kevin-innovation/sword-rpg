@@ -28,7 +28,7 @@ export default function AuthForm() {
             id: id,
             email: email,
             nickname: user_metadata?.nickname || email?.split('@')[0] || '유저',
-            money: 30000,
+            money: 200000,
             fragments: 0
           }, {
             onConflict: 'id',

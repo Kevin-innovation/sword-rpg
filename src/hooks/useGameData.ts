@@ -53,7 +53,7 @@ export function useGameData() {
             id: user.id,
             email: user.email,
             nickname: user.nickname || user.email?.split('@')[0] || '유저',
-            money: 30000,
+            money: 200000,
             fragments: 0,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
@@ -102,7 +102,7 @@ export function useGameData() {
           money: userData.money,
           fragments: userData.fragments
         });
-        setMoney(userData.money || 30000); // 데이터베이스에서 로드된 실제 골드 사용
+        setMoney(userData.money || 200000); // 데이터베이스에서 로드된 실제 골드 사용
         setFragments(userData.fragments || 0);
       }
       
