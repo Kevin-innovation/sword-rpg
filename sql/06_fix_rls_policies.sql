@@ -1,8 +1,17 @@
 -- RLS 정책 문제 해결 및 누락된 사용자 데이터 생성
 
--- 1. user_achievements 테이블 INSERT 정책 추가
-CREATE POLICY "Users can insert own achievements" ON user_achievements
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
+-- 1. user_achievements 테이블 INSERT 정책 추가 (이미 있으면 무시)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'user_achievements' 
+        AND policyname = 'Users can insert own achievements'
+    ) THEN
+        CREATE POLICY "Users can insert own achievements" ON user_achievements
+          FOR INSERT WITH CHECK (auth.uid() = user_id);
+    END IF;
+END $$;
 
 -- 2. 기존 정책 확인 (선택사항)
 -- SELECT * FROM pg_policies WHERE tablename = 'user_achievements';
