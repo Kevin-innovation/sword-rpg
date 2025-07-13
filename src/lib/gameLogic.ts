@@ -103,6 +103,44 @@ export function calculateBoostedChance(baseChance: number, boostPercentage: numb
   return Math.min(baseChance + boostPercentage, 100); // 최대 100%
 }
 
+// 축복서 시스템: 연속 성공 보너스
+export function calculateBlessingBonus(consecutiveSuccesses: number): number {
+  // 연속 성공 횟수에 따른 보너스 확률
+  if (consecutiveSuccesses >= 3) return 15; // 3연속 성공 시 +15%
+  if (consecutiveSuccesses >= 2) return 10; // 2연속 성공 시 +10%
+  if (consecutiveSuccesses >= 1) return 5;  // 1연속 성공 시 +5%
+  return 0;
+}
+
+// 특수 재료 소모 함수
+export function calculateMaterialConsumption(level: number): {
+  consumedMaterials: string[];
+  description: string;
+} {
+  const consumed: string[] = [];
+  let description = '';
+
+  if (level >= 10) {
+    consumed.push('magic_stone');
+    description += '마력석 1개 소모. ';
+  }
+  
+  if (level >= 15) {
+    consumed.push('purification_water', 'advanced_protection');
+    description += '정화수 1개, 고급 보호권 1개 소모. ';
+  }
+  
+  if (level >= 20) {
+    consumed.push('legendary_essence');
+    description += '전설의 정수 1개 소모. ';
+  }
+
+  return {
+    consumedMaterials: consumed,
+    description: description || '일반 재료만 소모됩니다.'
+  };
+}
+
 // 누적 강화 비용 계산 함수 (로그 함수 기반)
 export function calculateTotalEnhanceCost(level: number): number {
   let total = 0;
@@ -123,12 +161,71 @@ export const calculateSwordSellPrice = (level: number): number => {
   return Math.floor(base * 3.0);
 };
 
-// 주문서 비용 상수 (게임 밸런스 개선을 위해 5배 증가)
+// 주문서 및 특수 재료 비용 상수
 export const ORDER_COST = {
-  protect: 15000,      // 보호 주문서 - 실패 시 레벨 하락 방지
-  doubleChance: 15000, // 확률 x2 - 강화 성공 확률 2배
-  discount: 15000      // 비용 절약 - 강화 비용 50% 할인
+  protect: 15000,           // 보호 주문서 - 실패 시 레벨 하락 방지
+  doubleChance: 15000,      // 확률 x2 - 강화 성공 확률 2배
+  discount: 15000,          // 비용 절약 - 강화 비용 50% 할인
+  magic_stone: 25000,       // 마력석 - 10강+ 필수 재료
+  purification_water: 50000, // 정화수 - 15강+ 필수 재료  
+  legendary_essence: 100000, // 전설의 정수 - 20강+ 희귀 재료
+  advanced_protection: 75000, // 고급 보호권 - 15강+ 전용
+  blessing_scroll: 30000     // 축복서 - 연속 성공 보너스
 };
+
+// 구간별 필수 재료 시스템
+export const REQUIRED_MATERIALS = {
+  // 10강 이상: 마력석 필수
+  level_10_plus: {
+    threshold: 10,
+    required_items: ['magic_stone'],
+    message: '10강 이상 강화에는 마력석이 필요합니다.'
+  },
+  // 15강 이상: 정화수 + 고급보호권 필수
+  level_15_plus: {
+    threshold: 15,
+    required_items: ['purification_water', 'advanced_protection'],
+    message: '15강 이상 강화에는 정화수와 고급 보호권이 필요합니다.'
+  },
+  // 20강 이상: 전설의 정수 필수
+  level_20_plus: {
+    threshold: 20,
+    required_items: ['legendary_essence'],
+    message: '20강 이상 강화에는 전설의 정수가 필요합니다.'
+  }
+};
+
+// 구간별 필수 재료 확인 함수
+export function checkRequiredMaterials(level: number, userInventory: any[]): {
+  canEnhance: boolean;
+  missingItems: string[];
+  message: string;
+} {
+  const result = {
+    canEnhance: true,
+    missingItems: [] as string[],
+    message: ''
+  };
+
+  // 각 구간별 제한 확인
+  for (const [key, requirement] of Object.entries(REQUIRED_MATERIALS)) {
+    if (level >= requirement.threshold) {
+      for (const requiredItem of requirement.required_items) {
+        const hasItem = userInventory.some(item => 
+          item.items?.type === requiredItem && item.quantity > 0
+        );
+        
+        if (!hasItem) {
+          result.canEnhance = false;
+          result.missingItems.push(requiredItem);
+          result.message = requirement.message;
+        }
+      }
+    }
+  }
+
+  return result;
+}
 
 // 이펙트 시스템
 export const enhancementEffects = {

@@ -4,23 +4,70 @@ import { ORDER_COST } from "@/lib/gameLogic";
 import { apiRequest } from "@/lib/apiUtils";
 
 const initialItems = [
+  // 기본 주문서류
   {
     id: "doubleChance",
     name: "확률 2배 주문서",
     desc: "다음 강화 성공 확률이 2배로 증가",
     price: ORDER_COST.doubleChance,
+    category: "basic"
   },
   {
     id: "protect",
     name: "보호 주문서",
     desc: "강화 실패 시 레벨 하락/초기화 방지 (1회)",
     price: ORDER_COST.protect,
+    category: "basic"
   },
   {
     id: "discount",
     name: "비용 절약 주문서",
     desc: "다음 강화 비용 50% 할인",
     price: ORDER_COST.discount,
+    category: "basic"
+  },
+  
+  // 특수 재료류 (구간별 차별화)
+  {
+    id: "magic_stone",
+    name: "🔮 마력석",
+    desc: "10강 이상 강화에 필수! 신비한 마법의 힘",
+    price: ORDER_COST.magic_stone,
+    category: "material",
+    requiredLevel: 10
+  },
+  {
+    id: "purification_water",
+    name: "💧 정화수",
+    desc: "15강 이상 강화에 필수! 성스러운 정화의 물",
+    price: ORDER_COST.purification_water,
+    category: "material",
+    requiredLevel: 15
+  },
+  {
+    id: "legendary_essence",
+    name: "⭐ 전설의 정수",
+    desc: "20강 이상 강화에 필수! 극희귀 전설 재료",
+    price: ORDER_COST.legendary_essence,
+    category: "material",
+    requiredLevel: 20
+  },
+  
+  // 고급 주문서류
+  {
+    id: "advanced_protection",
+    name: "🛡️ 고급 보호권",
+    desc: "15강 이상 전용! 강화된 보호 효과",
+    price: ORDER_COST.advanced_protection,
+    category: "advanced",
+    requiredLevel: 15
+  },
+  {
+    id: "blessing_scroll",
+    name: "✨ 축복서",
+    desc: "연속 성공 시 보너스 확률 증가! (최대 +15%)",
+    price: ORDER_COST.blessing_scroll,
+    category: "special"
   },
 ];
 
@@ -30,7 +77,16 @@ const Shop = () => {
   const items = useGameState((s) => s.items);
   const setItems = useGameState((s) => s.setItems);
   const user = useGameState((s) => s.user);
+  const swordLevel = useGameState((s) => s.swordLevel);
   const [purchasing, setPurchasing] = useState<string | null>(null);
+  
+  // 카테고리별 아이템 분류
+  const categorizedItems = {
+    basic: initialItems.filter(item => item.category === "basic"),
+    material: initialItems.filter(item => item.category === "material"),
+    advanced: initialItems.filter(item => item.category === "advanced"),
+    special: initialItems.filter(item => item.category === "special")
+  };
 
   const handleBuy = async (id: string, price: number) => {
     if (!user?.id) {
