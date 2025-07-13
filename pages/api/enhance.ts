@@ -13,6 +13,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
+  
+  // 디버깅: 모든 요청 로깅
+  console.log('API Request:', {
+    method: req.method,
+    url: req.url,
+    headers: req.headers,
+    body: req.body,
+    query: req.query
+  });
 
   if (req.method !== 'POST') {
     console.error('Invalid method:', req.method, 'Body:', req.body, 'Query:', req.query);
@@ -48,17 +57,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (userError || !user) {
     console.error('User not found, attempting to create:', { userId, userError });
     
-    // 사용자가 없으면 즉시 생성 시도
+    // 사용자가 없으면 즉시 생성 시도 (UPSERT 사용)
     try {
       const { data: newUser, error: createUserError } = await supabase
         .from('users')
-        .insert({
+        .upsert({
           id: userId,
           email: 'temp@example.com',
           nickname: '임시유저',
           money: 200000,
           fragments: 0
-        })
+        }, { onConflict: 'id' })
         .select()
         .single();
       
@@ -66,13 +75,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         console.log('User created successfully:', newUser);
         user = newUser;
         
-        // 검도 생성
+        // 검도 생성 (UPSERT 사용)
         const { data: newSword } = await supabase
           .from('swords')
-          .insert({
+          .upsert({
             user_id: userId,
             level: currentLevel || 0
-          })
+          }, { onConflict: 'user_id' })
           .select()
           .single();
         
