@@ -55,47 +55,86 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   let sword = swordData?.[0];
 
   if (userError || !user) {
-    console.error('User not found, attempting to create:', { userId, userError });
+    console.error('User not found, attempting multiple strategies:', { userId, userError });
     
-    // 사용자가 없으면 즉시 생성 시도 (UPSERT 사용)
-    try {
-      const { data: newUser, error: createUserError } = await supabase
-        .from('users')
+    // 전략 1: 다시 조회 시도
+    const { data: retryUser } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .single();
+    
+    if (retryUser) {
+      console.log('User found on retry:', retryUser);
+      user = retryUser;
+    } else {
+      // 전략 2: 강제 INSERT (RLS 우회)
+      try {
+        console.log('Attempting direct user creation...');
+        const { data: directUser, error: directError } = await supabase.rpc('create_user_if_not_exists', {
+          user_id: userId,
+          user_email: 'temp@example.com',
+          user_nickname: '임시유저',
+          user_money: 200000,
+          user_fragments: 0
+        });
+        
+        if (directUser && !directError) {
+          console.log('User created via RPC:', directUser);
+          user = directUser;
+        } else {
+          console.error('RPC failed, trying simple insert:', directError);
+          
+          // 전략 3: 최후의 수단 - 간단한 INSERT
+          const { data: simpleUser, error: simpleError } = await supabase
+            .from('users')
+            .insert([{
+              id: userId,
+              email: 'temp@example.com',
+              nickname: '임시유저',
+              money: 200000,
+              fragments: 0,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }])
+            .select()
+            .single();
+          
+          if (simpleUser && !simpleError) {
+            console.log('User created via simple insert:', simpleUser);
+            user = simpleUser;
+          } else {
+            console.error('All user creation strategies failed:', simpleError);
+            return res.status(500).json({ 
+              error: 'Failed to create user', 
+              details: simpleError?.message,
+              userId: userId
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Exception during user creation:', err);
+        return res.status(500).json({ error: 'User creation exception', details: err });
+      }
+    }
+    
+    // 검 레코드도 생성
+    if (user && (!sword || swordError)) {
+      const { data: newSword } = await supabase
+        .from('swords')
         .upsert({
-          id: userId,
-          email: 'temp@example.com',
-          nickname: '임시유저',
-          money: 200000,
-          fragments: 0
-        }, { onConflict: 'id' })
+          user_id: userId,
+          level: currentLevel || 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id' })
         .select()
         .single();
       
-      if (!createUserError && newUser) {
-        console.log('User created successfully:', newUser);
-        user = newUser;
-        
-        // 검도 생성 (UPSERT 사용)
-        const { data: newSword } = await supabase
-          .from('swords')
-          .upsert({
-            user_id: userId,
-            level: currentLevel || 0
-          }, { onConflict: 'user_id' })
-          .select()
-          .single();
-        
-        if (newSword) {
-          console.log('Sword created successfully:', newSword);
-          sword = newSword;
-        }
-      } else {
-        console.error('Failed to create user:', createUserError);
-        return res.status(404).json({ error: 'User not found and creation failed' });
+      if (newSword) {
+        console.log('Sword created/updated:', newSword);
+        sword = newSword;
       }
-    } catch (err) {
-      console.error('Error creating user:', err);
-      return res.status(404).json({ error: 'User not found' });
     }
   }
   if (swordError || !sword) {
