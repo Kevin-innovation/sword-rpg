@@ -76,19 +76,11 @@ export default function EnhanceButton() {
     setGaugeProgress(0);
     setGaugeResult(null);
     
-    // 게이지가 매우 빠르게 올라가는 애니메이션 (0.2초)
-    const gaugeInterval = setInterval(() => {
-      setGaugeProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(gaugeInterval);
-          return 100;
-        }
-        return prev + 20; // 5번에 걸쳐 100%까지 (매우 빠르게)
-      });
-    }, 10); // 10ms마다 업데이트 (매우 빠르게)
+    // 🚀 병렬 처리: API 호출과 게이지 애니메이션 동시 시작
+    const apiStartTime = Date.now();
     
-    try {
-      const response = await fetch("/api/enhance", {
+    // API 호출 즉시 시작 (Promise)
+    const apiPromise = fetch("/api/enhance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -100,6 +92,31 @@ export default function EnhanceButton() {
           useFragmentBoost: selectedFragmentBoost
         })
       });
+    
+    // 동시에 게이지 애니메이션 시작 (적응형 속도)
+    let gaugeCompleted = false;
+    const gaugeInterval = setInterval(() => {
+      setGaugeProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(gaugeInterval);
+          gaugeCompleted = true;
+          return 100;
+        }
+        // API 응답 시간에 따라 적응적 속도 조절
+        const elapsed = Date.now() - apiStartTime;
+        const targetSpeed = elapsed > 100 ? 30 : 15; // API 늦으면 빠르게
+        return prev + targetSpeed;
+      });
+    }, 8); // 8ms마다 업데이트 (더 부드럽게)
+    
+    try {
+      const response = await apiPromise;
+      
+      // API 응답 즉시 게이지 완료 처리
+      if (!gaugeCompleted) {
+        clearInterval(gaugeInterval);
+        setGaugeProgress(100);
+      }
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -116,37 +133,32 @@ export default function EnhanceButton() {
         return;
       }
       
-      // 게이지 애니메이션 결과 표시 - 딜레이 최적화
+      // 🚀 즉시 결과 표시 (딜레이 제거)
       if (data.success) {
         setGaugeResult('success');
-        // 성공 시 빠른 결과 처리
-        setTimeout(() => {
-          setSwordLevel(data.newLevel);
-          setResult("success");
-          // 성공시 업적 실시간 업데이트
-          if (user?.id) {
-            loadUserAchievements(user.id);
-          }
-          // 성공시 랭킹 새로고침 트리거
-          refreshRanking();
-        }, 10); // 500ms -> 10ms로 단축
+        // 즉시 결과 처리 (딜레이 제거)
+        setSwordLevel(data.newLevel);
+        setResult("success");
+        // 성공시 업적 실시간 업데이트
+        if (user?.id) {
+          loadUserAchievements(user.id);
+        }
+        // 성공시 랭킹 새로고침 트리거
+        refreshRanking();
       } else {
         setGaugeResult('fail');
-        // 실패 시 빠른 게이지 급락 후 결과 처리
-        setTimeout(() => {
-          setGaugeProgress(0); // 게이지 급락
-        }, 5); // 200ms -> 5ms로 단축
-        setTimeout(() => {
-          setSwordLevel(data.newLevel);
-          setResult("fail");
-          // 실패시 조각 업데이트
-          if (data.fragmentsGained > 0) {
-            setFragments(data.newFragments);
-            alert(`강화 실패! 레벨 0으로 초기화되었지만 조각 ${data.fragmentsGained}개를 획득했습니다.`);
-          } else {
-            alert("강화 실패! 레벨 0으로 초기화");
-          }
-        }, 15); // 700ms -> 15ms로 단축
+        // 즉시 실패 처리
+        setSwordLevel(data.newLevel);
+        setResult("fail");
+        // 게이지 급락 효과 (시각적 피드백만)
+        setTimeout(() => setGaugeProgress(0), 1);
+        // 실패시 조각 업데이트
+        if (data.fragmentsGained > 0) {
+          setFragments(data.newFragments);
+          alert(`강화 실패! 레벨 0으로 초기화되었지만 조각 ${data.fragmentsGained}개를 획득했습니다.`);
+        } else {
+          alert("강화 실패! 레벨 0으로 초기화");
+        }
       }
       
       // 돈과 조각 상태 업데이트
@@ -195,7 +207,7 @@ export default function EnhanceButton() {
       setGaugeResult(null);
       setAnim(false);
       setResult(null);
-    }, 300); // 2000ms -> 300ms로 단축
+    }, 150); // 300ms -> 150ms로 추가 단축
   };
 
   const handleEnhance = () => {
