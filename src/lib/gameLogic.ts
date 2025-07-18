@@ -81,9 +81,25 @@ export function calculateFragmentsOnFail(level: number): number {
   return 20;                        // 신화 구간 (극한 보상)
 }
 
-// 조각 획득량
+// 실패 시 강화 조각 획득 (높은 레벨에서 실패할수록 더 많은 조각)
 export const calculateFragmentsGained = (level: number): number => {
-  return level * 50;
+  if (level === 0) return 0; // 0강에서는 조각 없음
+  
+  // 기본 조각 + 레벨별 보너스
+  let baseFragments = level * 30; // 기본 30개/레벨
+  
+  // 고레벨 보너스 시스템
+  if (level >= 20) {
+    baseFragments += level * 100; // 20강+ 추가 보너스
+  } else if (level >= 15) {
+    baseFragments += level * 70;  // 15강+ 추가 보너스
+  } else if (level >= 10) {
+    baseFragments += level * 50;  // 10강+ 추가 보너스
+  } else if (level >= 5) {
+    baseFragments += level * 20;  // 5강+ 소폭 보너스
+  }
+  
+  return baseFragments;
 };
 
 // 조각으로 강화 확률 증가

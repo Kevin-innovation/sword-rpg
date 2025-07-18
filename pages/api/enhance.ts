@@ -242,6 +242,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     result = {
       success: true,
       newLevel: currentLevel + 1,
+      fragmentsGained: 0,  // 성공 시에는 조각 획득 없음
       moneySpent: enhanceCost
     };
   } else {
@@ -357,7 +358,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     updated_at: new Date().toISOString(),
   }).eq('id', sword.id);
   // 유저 돈/파편 갱신 (조각 사용 포함)
-  const newFragments = Math.max(0, (user.fragments || 0) + (result.fragmentsGained || 0) - fragmentsToUse);
+  const newFragments = Math.max(0, (user.fragments || 0) + (result.fragmentsGained) - fragmentsToUse);
   await supabase.from('users').update({
     money: user.money - enhanceCost,
     fragments: newFragments,
@@ -394,7 +395,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   res.status(200).json({
     success: result.success,
     newLevel: result.newLevel,
-    fragmentsGained: result.fragmentsGained || 0,
+    fragmentsGained: result.fragmentsGained,
     fragmentsUsed: fragmentsToUse,
     newMoney: user.money - enhanceCost,
     newFragments: newFragments,
