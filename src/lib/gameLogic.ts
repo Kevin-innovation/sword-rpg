@@ -169,12 +169,15 @@ export function calculateTotalEnhanceCost(level: number): number {
   return Math.floor(Math.log(level + 1) * total);
 }
 
-// 검 판매가 (누적 강화 비용의 1.2배)
+// 검 판매가 (상점 아이템 가격과 균형 맞춤)
 export const calculateSwordSellPrice = (level: number): number => {
   const base = calculateTotalEnhanceCost(level);
-  if (level < 10) return Math.floor(base * 2.0);
-  if (level < 15) return Math.floor(base * 2.5);
-  return Math.floor(base * 3.0);
+  // 더 완만한 증가율로 수정
+  if (level < 5) return Math.floor(base * 1.5);      // 초반: 1.5배
+  if (level < 10) return Math.floor(base * 1.8);     // 중반: 1.8배
+  if (level < 15) return Math.floor(base * 2.0);     // 고급: 2.0배
+  if (level < 20) return Math.floor(base * 2.2);     // 전설: 2.2배
+  return Math.floor(base * 2.5);                     // 신화: 2.5배
 };
 
 // 주문서 및 특수 재료 비용 상수 (게임 밸런스 개선을 위한 가격 조정)
