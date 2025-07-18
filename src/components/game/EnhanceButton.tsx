@@ -546,11 +546,8 @@ export default function EnhanceButton() {
           onClick={handleMoneyReset}
           disabled={swordLevel !== 0}
         >
-          <div className="flex flex-col items-center">
+          <div className="flex items-center justify-center">
             <span>🚫 클릭금지!</span>
-            <span className="text-xs font-normal mt-1">
-              {swordLevel === 0 ? '200,000 G 초기화' : `+${swordLevel} 상태에서 사용불가`}
-            </span>
           </div>
         </button>
       </div>
