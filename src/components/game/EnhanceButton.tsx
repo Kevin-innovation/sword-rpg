@@ -38,11 +38,30 @@ export default function EnhanceButton() {
   
   useEffect(() => {
     if (eggSeq.length >= 7 && eggSeq.slice(-7).every(n => n === 7)) {
-      setMoney(money + 77777);
+      handleEasterEgg();
       setEggSeq([]);
-      alert("77777 골드 이스터에그!");
     }
   }, [eggSeq]);
+
+  const handleEasterEgg = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const response = await fetch('/api/easter-egg', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setMoney(data.newMoney);
+        alert("77777 골드 이스터에그!");
+      }
+    } catch (error) {
+      console.error('이스터에그 오류:', error);
+    }
+  };
   
   // 키 입력 핸들러
   useEffect(() => {
