@@ -157,7 +157,11 @@ export default function SwordDisplay() {
           )}
           <div className={`select-none transition-all duration-500 ${getSwordStyle()}`}>
             <img 
-              src={`/images/swords/${Math.min(swordLevel + 1, 10)}.png`} 
+              src={`/images/swords/${(() => {
+                if (swordLevel <= 13) return Math.min(swordLevel + 1, 14);
+                // 14강 이상은 순환: 15강=8.png, 16강=9.png, 17강=10.png, 18강=11.png, 19강=12.png, 20강=13.png
+                return 8 + ((swordLevel - 14) % 6);
+              })()}.png`} 
               alt={swordNames[swordLevel] || "미지의 검"} 
               className="w-24 h-24 sm:w-32 sm:h-32 object-contain mx-auto drop-shadow-lg"
               onError={(e) => {
