@@ -45,6 +45,9 @@ export default function Home() {
             <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 bg-clip-text text-transparent drop-shadow-lg">
               검 강화하기 by DLAB Kevin
             </h1>
+            <p className="text-xs text-white/50 mt-1">
+              최신 버전 : 2025.07.18 v.2.3
+            </p>
           </div>
           
           <GameBoard>
