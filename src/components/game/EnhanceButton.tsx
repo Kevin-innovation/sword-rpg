@@ -526,7 +526,7 @@ export default function EnhanceButton() {
         </div>
         {/* 판매하기 버튼 */}
         <button
-          className={`w-full py-3 md:py-4 rounded-2xl font-bold text-lg md:text-xl shadow-xl transition-all duration-300 select-none bg-orange-400 text-white hover:bg-orange-500 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap`}
+          className={`w-full py-3 md:py-4 rounded-2xl font-bold text-lg md:text-xl shadow-2xl transition-all duration-300 select-none bg-orange-400 text-white hover:bg-orange-500 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap`}
           onClick={handleSell}
           disabled={swordLevel === 0 || isSelling}
         >
@@ -538,7 +538,7 @@ export default function EnhanceButton() {
         
         {/* 클릭금지! 버튼 */}
         <button
-          className={`w-full py-3 md:py-4 rounded-2xl font-bold text-lg md:text-xl shadow-xl transition-all duration-300 select-none ${
+          className={`w-full py-3 md:py-4 rounded-2xl font-bold text-lg md:text-xl shadow-2xl transition-all duration-300 select-none ${
             swordLevel === 0 
               ? 'bg-gradient-to-r from-red-500 to-pink-600 text-white hover:from-red-600 hover:to-pink-700' 
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
