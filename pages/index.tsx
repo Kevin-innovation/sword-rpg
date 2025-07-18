@@ -39,6 +39,14 @@ export default function Home() {
       <main className="relative z-10 min-h-screen w-full flex flex-col items-center justify-center px-4 py-8">
         <div className="w-full max-w-full md:max-w-lg space-y-6 md:space-y-8">
           <UserSection />
+          
+          {/* 게임 타이틀 */}
+          <div className="text-center">
+            <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 bg-clip-text text-transparent drop-shadow-lg">
+              검 강화하기 by DLAB Kevin
+            </h1>
+          </div>
+          
           <GameBoard>
             <SwordDisplay />
             <StatsPanel />
