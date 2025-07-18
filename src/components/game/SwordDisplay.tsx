@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { useGameState } from "@/store/useGameState";
 import { motion, useAnimation } from "framer-motion";
+import { calculateSwordSellPrice } from "@/lib/gameLogic";
 
 // CSS 애니메이션 정의
 const particleStyles = `
@@ -254,6 +255,11 @@ export default function SwordDisplay() {
         <div className="relative flex flex-col items-center">
           <div className={`font-black text-2xl sm:text-3xl transition-all duration-500 ${getLevelColor()}`}>
             +{swordLevel} {swordNames[swordLevel] || "미지의 검"}
+          </div>
+          
+          {/* 현재 가격 표시 */}
+          <div className="text-sm font-semibold text-gray-700 mt-1">
+            {swordLevel > 0 ? `현재 가격: ${calculateSwordSellPrice(swordLevel).toLocaleString()} G` : "판매 불가"}
           </div>
           
           {/* 레벨에 따른 타이틀 */}

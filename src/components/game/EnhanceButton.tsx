@@ -530,9 +530,8 @@ export default function EnhanceButton() {
           onClick={handleSell}
           disabled={swordLevel === 0 || isSelling}
         >
-          <div className="flex flex-col items-center">
+          <div className="flex items-center justify-center">
             <span>{isSelling ? '판매 중...' : '판매!'}</span>
-            <span className="text-xs font-normal mt-1">{swordLevel > 0 ? `${sellPrice.toLocaleString()} G` : "-"}</span>
           </div>
         </button>
         
