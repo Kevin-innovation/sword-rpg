@@ -272,9 +272,6 @@ export default function EnhanceButton() {
       return;
     }
     
-    const confirmReset = confirm('정말로 금액을 200,000골드로 초기화하시겠습니까?');
-    if (!confirmReset) return;
-    
     try {
       const response = await fetch('/api/reset-money', {
         method: 'POST',
