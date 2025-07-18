@@ -329,7 +329,7 @@ export default function SwordDisplay() {
         
         {/* CSS 스타일 주입 */}
         <style dangerouslySetInnerHTML={{ __html: particleStyles }} />
-        </div>
+        
         {/* 강화 레벨 및 검 이름 표시 */}
         <div className="relative flex flex-col items-center">
           <div className={`font-black text-2xl sm:text-3xl transition-all duration-500 ${getLevelColor()}`}>
