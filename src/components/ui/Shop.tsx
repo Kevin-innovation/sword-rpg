@@ -94,6 +94,13 @@ const Shop = () => {
       return;
     }
     
+    // 레벨 제한 확인
+    const item = initialItems.find(item => item.id === id);
+    if (item?.requiredLevel && swordLevel < item.requiredLevel) {
+      alert(`${item.requiredLevel}강 이상에서 구매할 수 있습니다!`);
+      return;
+    }
+    
     // 아이템별 최대 보유량 확인
     const maxQuantity = ITEM_LIMITS.maxQuantity[id] || 10;
     if ((items[id] || 0) >= maxQuantity) {
@@ -145,22 +152,45 @@ const Shop = () => {
         보유 골드: <span className="font-bold text-yellow-600">{money.toLocaleString()} G</span>
       </div>
       <div className="space-y-3 md:space-y-4">
-        {initialItems.map((item) => (
-          <div key={item.id} className="flex flex-col md:flex-row md:items-center justify-between bg-slate-50 rounded-xl p-3 md:p-4 border border-slate-200">
-            <div>
-              <div className="font-semibold text-slate-800 text-base md:text-lg">{item.name}</div>
-              <div className="text-xs md:text-sm text-slate-500 mb-1">{item.desc}</div>
-              <div className="text-xs md:text-sm text-slate-400">보유: {(items[item.id] || 0)}/{ITEM_LIMITS.maxQuantity[item.id] || 10}</div>
+        {initialItems.map((item) => {
+          const isLevelLocked = item.requiredLevel && swordLevel < item.requiredLevel;
+          const isMaxQuantity = (items[item.id] || 0) >= (ITEM_LIMITS.maxQuantity[item.id] || 10);
+          const canAfford = money >= item.price;
+          
+          return (
+            <div key={item.id} className={`flex flex-col md:flex-row md:items-center justify-between rounded-xl p-3 md:p-4 border ${
+              isLevelLocked ? 'bg-gray-100 border-gray-300' : 'bg-slate-50 border-slate-200'
+            }`}>
+              <div>
+                <div className={`font-semibold text-base md:text-lg ${
+                  isLevelLocked ? 'text-gray-500' : 'text-slate-800'
+                }`}>
+                  {item.name}
+                  {isLevelLocked && <span className="ml-2 text-xs text-red-500">(🔒 {item.requiredLevel}강 필요)</span>}
+                </div>
+                <div className={`text-xs md:text-sm mb-1 ${
+                  isLevelLocked ? 'text-gray-400' : 'text-slate-500'
+                }`}>{item.desc}</div>
+                <div className={`text-xs md:text-sm ${
+                  isLevelLocked ? 'text-gray-400' : 'text-slate-400'
+                }`}>보유: {(items[item.id] || 0)}/{ITEM_LIMITS.maxQuantity[item.id] || 10}</div>
+              </div>
+              <button
+                className={`mt-2 md:mt-0 px-3 md:px-4 py-1.5 md:py-2 rounded text-xs md:text-sm font-semibold shadow transition disabled:opacity-50 disabled:cursor-not-allowed ${
+                  isLevelLocked 
+                    ? 'bg-gray-300 text-gray-600' 
+                    : 'bg-orange-400 text-white hover:bg-orange-500'
+                }`}
+                onClick={() => handleBuy(item.id, item.price)}
+                disabled={isLevelLocked || !canAfford || isMaxQuantity || purchasing === item.id}
+              >
+                {purchasing === item.id ? '구매중...' : 
+                 isLevelLocked ? '잠금' :
+                 `${item.price.toLocaleString()} G 구매`}
+              </button>
             </div>
-            <button
-              className={`mt-2 md:mt-0 px-3 md:px-4 py-1.5 md:py-2 rounded bg-orange-400 text-white text-xs md:text-sm font-semibold shadow hover:bg-orange-500 transition disabled:opacity-50 disabled:cursor-not-allowed`}
-              onClick={() => handleBuy(item.id, item.price)}
-              disabled={money < item.price || (items[item.id] || 0) >= (ITEM_LIMITS.maxQuantity[item.id] || 10) || purchasing === item.id}
-            >
-              {purchasing === item.id ? '구매중...' : `${item.price.toLocaleString()} G 구매`}
-            </button>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
