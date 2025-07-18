@@ -228,8 +228,8 @@ $$ LANGUAGE plpgsql;
 -- 검 판매 처리 함수
 CREATE OR REPLACE FUNCTION handle_sword_sale(
     p_user_id UUID,
-    p_sword_level INTEGER,
-    p_sell_price INTEGER
+    p_sell_price INTEGER,
+    p_current_level INTEGER
 ) RETURNS JSON AS $$
 DECLARE
     current_money INTEGER;
@@ -254,10 +254,10 @@ BEGIN
     
     -- 랭킹 업데이트 (골드만 업데이트, 최대 레벨은 유지)
     INSERT INTO rankings (user_id, max_sword_level, total_gold, created_at, updated_at)
-    VALUES (p_user_id, p_sword_level, current_money + p_sell_price, NOW(), NOW())
+    VALUES (p_user_id, p_current_level, current_money + p_sell_price, NOW(), NOW())
     ON CONFLICT (user_id)
     DO UPDATE SET
-        max_sword_level = GREATEST(rankings.max_sword_level, p_sword_level),
+        max_sword_level = GREATEST(rankings.max_sword_level, p_current_level),
         total_gold = current_money + p_sell_price,
         updated_at = NOW();
     
