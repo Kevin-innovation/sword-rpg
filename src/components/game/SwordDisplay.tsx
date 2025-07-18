@@ -23,12 +23,82 @@ const particleStyles = `
       transform: rotate(var(--rotation)) translateY(0px) translate(-50%, -50%) scale(0);
     }
   }
+  
+  @keyframes subtleShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-1px); }
+    75% { transform: translateX(1px); }
+  }
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+  
+  @keyframes scan {
+    0% { transform: translateX(-100%) skewX(-12deg); }
+    100% { transform: translateX(200%) skewX(-12deg); }
+  }
+  
+  @keyframes sweep {
+    0% { transform: translateX(-100%) rotate(45deg); }
+    100% { transform: translateX(200%) rotate(45deg); }
+  }
+  
+  @keyframes twinkle {
+    0%, 100% { opacity: 0; transform: scale(0); }
+    50% { opacity: 1; transform: scale(1); }
+  }
+  
+  @keyframes spinSlow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  
+  @keyframes spinReverse {
+    from { transform: rotate(360deg); }
+    to { transform: rotate(0deg); }
+  }
+  
+  @keyframes explode {
+    0% { transform: scale(0); opacity: 1; }
+    100% { transform: scale(3); opacity: 0; }
+  }
+  
+  @keyframes implode {
+    0% { transform: scale(1); opacity: 0.8; }
+    100% { transform: scale(0.3); opacity: 0; }
+  }
+  
+  .animate-subtle-shake { animation: subtleShake 2s ease-in-out infinite; }
+  .animate-float { animation: float 3s ease-in-out infinite; }
+  .animate-scan { animation: scan 2s ease-in-out infinite; }
+  .animate-sweep { animation: sweep 2s ease-in-out infinite; }
+  .animate-twinkle { animation: twinkle 1.5s ease-in-out infinite; }
+  .animate-spin-slow { animation: spinSlow 4s linear infinite; }
+  .animate-spin-reverse { animation: spinReverse 6s linear infinite; }
+  .animate-explode { animation: explode 0.6s ease-out forwards; }
+  .animate-implode { animation: implode 0.6s ease-in forwards; }
 `;
 
 export default function SwordDisplay() {
   const swordLevel = useGameState((s) => s.swordLevel);
   const prevLevel = useRef(swordLevel);
   const controls = useAnimation();
+  
+  // 추가 상태 변수
+  const [result, setResult] = React.useState<null | "success" | "fail">(null);
+  
+  // 결과 상태 관리
+  React.useEffect(() => {
+    if (swordLevel > prevLevel.current) {
+      setResult("success");
+      setTimeout(() => setResult(null), 2000);
+    } else if (swordLevel === 0 && prevLevel.current > 0) {
+      setResult("fail");
+      setTimeout(() => setResult(null), 2000);
+    }
+  }, [swordLevel]);
 
   useEffect(() => {
     if (swordLevel > prevLevel.current) {
@@ -85,6 +155,31 @@ export default function SwordDisplay() {
     if (swordLevel >= 1) return "text-amber-600";
     return "text-gray-600";
   };
+  
+  // 새로운 헬퍼 함수들
+  const getAuraEffect = () => {
+    if (swordLevel >= 20) return "drop-shadow-[0_0_60px_rgba(255,0,128,0.8)] filter brightness-110";
+    if (swordLevel >= 15) return "drop-shadow-[0_0_40px_rgba(139,92,246,0.8)] filter brightness-108";
+    if (swordLevel >= 10) return "drop-shadow-[0_0_30px_rgba(59,130,246,0.8)] filter brightness-106";
+    if (swordLevel >= 5) return "drop-shadow-[0_0_20px_rgba(16,185,129,0.8)] filter brightness-104";
+    return "drop-shadow-lg";
+  };
+  
+  const getParticleCount = () => {
+    if (swordLevel >= 20) return 32;
+    if (swordLevel >= 15) return 24;
+    if (swordLevel >= 10) return 16;
+    if (swordLevel >= 5) return 8;
+    return 0;
+  };
+  
+  const getFloatingRunes = () => {
+    if (swordLevel >= 20) return ['⚡', '🔥', '❄️', '🌟', '💫', '✨'];
+    if (swordLevel >= 15) return ['⚡', '🔥', '❄️', '🌟'];
+    if (swordLevel >= 10) return ['⚡', '🔥', '❄️'];
+    if (swordLevel >= 5) return ['⚡', '🔥'];
+    return [];
+  };
 
   const getBackgroundGlow = () => {
     if (swordLevel >= 20) return "bg-gradient-to-r from-purple-500/30 via-pink-500/30 via-red-500/30 via-yellow-500/30 via-green-500/30 via-blue-500/30 to-purple-500/30";
@@ -135,125 +230,105 @@ export default function SwordDisplay() {
         animate={controls} 
         className="flex flex-col items-center justify-center relative z-10"
       >
-        {/* 검 이미지 */}
-        <div className="relative mb-4">
-          {/* 고급 레벨에서 추가 오라 효과 */}
-          {swordLevel >= 15 && (
-            <div className="absolute -inset-8 pointer-events-none">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div
-                  key={`aura-${i}`}
-                  className={`absolute w-full h-full rounded-full border-2 animate-ping ${
-                    swordLevel >= 20 ? 'border-purple-400/20' :
-                    'border-purple-500/30'
-                  }`}
-                  style={{
-                    animationDelay: `${i * 0.5}s`,
-                    animationDuration: '2s'
-                  }}
-                ></div>
-              ))}
+        {/* 검 이미지 - 모든 효과 통합 */}
+        <div className="relative mb-4 w-32 h-32 sm:w-40 sm:h-40 flex items-center justify-center">
+          
+          {/* 펄스 웨이브 효과 */}
+          {swordLevel >= 5 && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-20 h-20 bg-blue-400/20 rounded-full animate-ping"></div>
+              <div className="absolute w-16 h-16 bg-purple-400/20 rounded-full animate-ping" style={{animationDelay: '0.5s'}}></div>
+              <div className="absolute w-12 h-12 bg-pink-400/20 rounded-full animate-ping" style={{animationDelay: '1s'}}></div>
             </div>
           )}
-          <div className={`select-none transition-all duration-500 ${getSwordStyle()}`}>
+          
+          {/* 회전하는 에너지 링 */}
+          {swordLevel >= 5 && (
+            <div className="absolute inset-0 animate-spin-slow">
+              <div className="w-full h-full rounded-full border-2 border-blue-400/30 border-dashed"></div>
+            </div>
+          )}
+          {swordLevel >= 10 && (
+            <div className="absolute inset-0 animate-spin-reverse">
+              <div className="w-full h-full rounded-full border border-purple-400/40 border-dotted"></div>
+            </div>
+          )}
+          {swordLevel >= 15 && (
+            <div className="absolute inset-0 animate-spin-slow" style={{animationDuration: '3s'}}>
+              <div className="w-full h-full rounded-full border border-pink-400/50 border-double"></div>
+            </div>
+          )}
+          
+          {/* 에너지 충전 효과 */}
+          {swordLevel >= 10 && (
+            <div className="absolute inset-0 overflow-hidden rounded-full">
+              <div className="absolute -inset-4 bg-gradient-to-r from-transparent via-blue-400/20 to-transparent rotate-45 animate-sweep"></div>
+            </div>
+          )}
+          
+          {/* 홀로그램 스캔 효과 */}
+          {swordLevel >= 15 && (
+            <div className="absolute inset-0 overflow-hidden rounded-full">
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent -skew-x-12 animate-scan"></div>
+            </div>
+          )}
+          
+          {/* 강화 성공/실패 특수 효과 */}
+          {result === "success" && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-full h-full bg-gradient-radial from-yellow-400/80 via-orange-500/60 to-transparent animate-explode rounded-full"></div>
+            </div>
+          )}
+          {result === "fail" && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-full h-full bg-gradient-radial from-red-500/80 via-gray-500/60 to-transparent animate-implode rounded-full"></div>
+            </div>
+          )}
+          
+          {/* 플로팅 룬 문자 */}
+          {getFloatingRunes().map((rune, i) => (
+            <div key={`rune-${i}`} 
+                 className="absolute text-lg animate-float opacity-60 pointer-events-none"
+                 style={{
+                   top: `${20 + i * 12}%`,
+                   left: `${10 + i * 15}%`,
+                   animationDelay: `${i * 0.5}s`
+                 }}>
+              {rune}
+            </div>
+          ))}
+          
+          {/* 트윙클 파티클 */}
+          {Array.from({length: getParticleCount()}).map((_, i) => (
+            <div key={`particle-${i}`} 
+                 className="absolute w-1 h-1 bg-yellow-400 rounded-full animate-twinkle pointer-events-none" 
+                 style={{
+                   top: `${Math.random() * 100}%`,
+                   left: `${Math.random() * 100}%`,
+                   animationDelay: `${Math.random() * 2}s`
+                 }} />
+          ))}
+          
+          {/* 검 이미지 (메인) */}
+          <div className={`select-none transition-all duration-500 ${getSwordStyle()} relative z-10`}>
             <img 
               src={`/images/swords/${(() => {
                 if (swordLevel <= 13) return Math.min(swordLevel + 1, 14);
-                // 14강 이상은 순환: 15강=8.png, 16강=9.png, 17강=10.png, 18강=11.png, 19강=12.png, 20강=13.png
                 return 8 + ((swordLevel - 14) % 6);
               })()}.png`} 
               alt={swordNames[swordLevel] || "미지의 검"} 
-              className="w-24 h-24 sm:w-32 sm:h-32 object-contain mx-auto drop-shadow-lg"
+              className={`w-24 h-24 sm:w-32 sm:h-32 object-contain mx-auto transition-all duration-300 ${getAuraEffect()} ${
+                swordLevel >= 15 ? 'animate-subtle-shake' : ''
+              }`}
               onError={(e) => {
-                // 이미지 로드 실패시 폴백
                 e.currentTarget.src = "/sword_img/1.svg";
               }}
             />
           </div>
-          {/* CSS 스타일 주입 */}
-          <style dangerouslySetInnerHTML={{ __html: particleStyles }} />
-          
-          {/* 강화 성공시 파티클 효과 - 안쪽으로 모이는 효과 */}
-          {swordLevel > 0 && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{overflow: 'visible'}}>
-              {/* 기본 파티클 - 안쪽으로 모이는 애니메이션 */}
-              {Array.from({ length: 16 }).map((_, i) => (
-                <div
-                  key={`basic-${i}`}
-                  className={`absolute w-1.5 h-1.5 rounded-full ${
-                    swordLevel >= 18 ? 'bg-purple-400' :
-                    swordLevel >= 15 ? 'bg-violet-400' :
-                    swordLevel >= 10 ? 'bg-blue-400' :
-                    swordLevel >= 5 ? 'bg-green-400' :
-                    'bg-yellow-400'
-                  }`}
-                  style={{
-                    left: '50%',
-                    top: '50%',
-                    '--rotation': `${i * 22.5}deg`,
-                    '--distance': '-64px',
-                    animation: `convergeIn 4s infinite ease-in-out`,
-                    animationDelay: `${i * 0.2}s`
-                  } as React.CSSProperties}
-                ></div>
-              ))}
-              
-              {/* 고급 파티클 (레벨 5+) - 더 촘촘하게 */}
-              {swordLevel >= 5 && Array.from({ length: 24 }).map((_, i) => (
-                <div
-                  key={`advanced-${i}`}
-                  className={`absolute w-1 h-1 rounded-full opacity-80 ${
-                    swordLevel >= 18 ? 'bg-purple-300' :
-                    swordLevel >= 15 ? 'bg-violet-300' :
-                    swordLevel >= 10 ? 'bg-blue-300' :
-                    'bg-green-300'
-                  }`}
-                  style={{
-                    left: '50%',
-                    top: '50%',
-                    '--rotation': `${i * 15}deg`,
-                    '--distance': '-80px',
-                    animation: `convergeIn 5s infinite ease-in-out`,
-                    animationDelay: `${i * 0.15}s`
-                  } as React.CSSProperties}
-                ></div>
-              ))}
-              
-              {/* 전설 파티클 (레벨 15+) */}
-              {swordLevel >= 15 && Array.from({ length: 32 }).map((_, i) => (
-                <div
-                  key={`legendary-${i}`}
-                  className={`absolute w-2 h-2 rounded-full ${
-                    swordLevel >= 18 ? 'bg-purple-500' : 'bg-violet-500'
-                  }`}
-                  style={{
-                    left: '50%',
-                    top: '50%',
-                    '--rotation': `${i * 11.25}deg`,
-                    '--distance': '-96px',
-                    animation: `convergeIn 6s infinite ease-in-out`,
-                    animationDelay: `${i * 0.12}s`
-                  } as React.CSSProperties}
-                ></div>
-              ))}
-              
-              {/* 신화 파티클 (레벨 20+) - 가장 촘촘하게 */}
-              {swordLevel >= 20 && Array.from({ length: 48 }).map((_, i) => (
-                <div
-                  key={`mythic-${i}`}
-                  className="absolute w-0.5 h-3 bg-gradient-to-t from-purple-500 via-pink-400 to-yellow-300 rounded-full"
-                  style={{
-                    left: '50%',
-                    top: '50%',
-                    '--rotation': `${i * 7.5}deg`,
-                    '--distance': '-112px',
-                    animation: `convergeIn 7s infinite ease-in-out`,
-                    animationDelay: `${i * 0.1}s`
-                  } as React.CSSProperties}
-                ></div>
-              ))}
-            </div>
-          )}
+        </div>
+        
+        {/* CSS 스타일 주입 */}
+        <style dangerouslySetInnerHTML={{ __html: particleStyles }} />
         </div>
         {/* 강화 레벨 및 검 이름 표시 */}
         <div className="relative flex flex-col items-center">
