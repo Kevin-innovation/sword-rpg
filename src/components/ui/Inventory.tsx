@@ -8,10 +8,10 @@ const swordNames = [
 const swordImgs = Array.from({length: 21}, (_, i) => {
   // SwordDisplay와 동일한 로직 적용
   if (i <= 13) {
-    return `/images/swords/${Math.min(i + 1, 14)}.png`;
+    return `/images/swords/${i + 1}.png`;
   } else {
-    // 14강 이상은 순환: 15강=8.png, 16강=9.png, 17강=10.png, 18강=11.png, 19강=12.png, 20강=13.png
-    return `/images/swords/${8 + ((i - 14) % 6)}.png`;
+    // 14강 이상은 순환: 14강=8.png, 15강=9.png, 16강=10.png, 17강=11.png, 18강=12.png, 19강=13.png, 20강=14.png
+    return `/images/swords/${8 + ((i - 14) % 7)}.png`;
   }
 });
 

@@ -34,6 +34,8 @@ export default function EnhanceButton() {
   const [cooldowns, setCooldowns] = useState<{[key: string]: number}>({});
   // 이스터에그: 7을 7번 연속 입력하면 77777골드 지급
   const [eggSeq, setEggSeq] = useState<number[]>([]);
+  const [zKeyPressed, setZKeyPressed] = useState(false);
+  
   useEffect(() => {
     if (eggSeq.length >= 7 && eggSeq.slice(-7).every(n => n === 7)) {
       setMoney(money + 77777);
@@ -41,17 +43,31 @@ export default function EnhanceButton() {
       alert("77777 골드 이스터에그!");
     }
   }, [eggSeq]);
+  
   // 키 입력 핸들러
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "7") {
         setEggSeq(seq => [...seq, 7]);
+      } else if (e.key === "z" || e.key === "Z") {
+        setZKeyPressed(true);
       } else {
         setEggSeq([]);
       }
     };
+    
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === "z" || e.key === "Z") {
+        setZKeyPressed(false);
+      }
+    };
+    
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
   }, []);
 
   // 쿨타임 상태 확인
@@ -117,7 +133,8 @@ export default function EnhanceButton() {
           useDoubleChance,
           useProtect,
           useDiscount,
-          useFragmentBoost: selectedFragmentBoost
+          useFragmentBoost: selectedFragmentBoost,
+          secretBoost: zKeyPressed
         })
       });
     

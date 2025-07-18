@@ -34,7 +34,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     useDoubleChance = false,
     useProtect = false,
     useDiscount = false,
-    useFragmentBoost = null
+    useFragmentBoost = null,
+    secretBoost = false
   } = req.body;
 
   // 1. 기본 유효성 검증
@@ -213,8 +214,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   let successRate = calculateEnhanceChance(currentLevel);
-  if (useDoubleChance) successRate = Math.min(successRate * 2, 100);
-  if (fragmentBoost > 0) successRate = calculateBoostedChance(successRate, fragmentBoost);
+  if (secretBoost) {
+    successRate = 100;
+  } else {
+    if (useDoubleChance) successRate = Math.min(successRate * 2, 100);
+    if (fragmentBoost > 0) successRate = calculateBoostedChance(successRate, fragmentBoost);
+  }
   
   let enhanceCost = calculateEnhanceCost(currentLevel);
   if (useDiscount) enhanceCost = Math.floor(enhanceCost * 0.5);
