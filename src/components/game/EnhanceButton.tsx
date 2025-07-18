@@ -259,6 +259,43 @@ export default function EnhanceButton() {
   };
 
   const sellPrice = calculateSwordSellPrice(swordLevel);
+  
+  // 금액 초기화 함수
+  const handleMoneyReset = async () => {
+    if (!user?.id) {
+      alert('로그인이 필요합니다!');
+      return;
+    }
+    
+    if (swordLevel !== 0) {
+      alert('검이 +0 상태일 때만 사용할 수 있습니다!');
+      return;
+    }
+    
+    const confirmReset = confirm('정말로 금액을 200,000골드로 초기화하시겠습니까?');
+    if (!confirmReset) return;
+    
+    try {
+      const response = await fetch('/api/reset-money', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setMoney(data.newMoney);
+        alert('금액이 200,000골드로 초기화되었습니다!');
+      } else {
+        const errorData = await response.json();
+        alert(`오류: ${errorData.error}`);
+      }
+    } catch (error) {
+      console.error('금액 초기화 오류:', error);
+      alert('금액 초기화 중 오류가 발생했습니다.');
+    }
+  };
+  
   const handleSell = async () => {
     if (!user?.id) {
       alert('로그인이 필요합니다!');
@@ -367,7 +404,7 @@ export default function EnhanceButton() {
         </div>
         
         <motion.button
-          className={`w-full relative p-5 md:p-6 rounded-2xl font-bold text-lg md:text-xl shadow-2xl transition-all duration-150 select-none overflow-hidden
+          className={`w-full relative py-3 md:py-4 rounded-2xl font-bold text-lg md:text-xl shadow-2xl transition-all duration-150 select-none overflow-hidden
             ${result === "success" 
               ? "bg-gradient-to-r from-green-400 to-emerald-500 text-white" 
               : result === "fail" 
@@ -489,13 +526,31 @@ export default function EnhanceButton() {
         </div>
         {/* 판매하기 버튼 */}
         <button
-          className={`w-full px-2 md:px-3 py-3 md:py-4 rounded-2xl font-bold text-lg md:text-xl shadow-xl transition-all duration-300 select-none bg-orange-400 text-white hover:bg-orange-500 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap`}
+          className={`w-full py-3 md:py-4 rounded-2xl font-bold text-lg md:text-xl shadow-xl transition-all duration-300 select-none bg-orange-400 text-white hover:bg-orange-500 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap`}
           onClick={handleSell}
           disabled={swordLevel === 0 || isSelling}
         >
           <div className="flex flex-col items-center">
             <span>{isSelling ? '판매 중...' : '판매!'}</span>
             <span className="text-xs font-normal mt-1">{swordLevel > 0 ? `${sellPrice.toLocaleString()} G` : "-"}</span>
+          </div>
+        </button>
+        
+        {/* 클릭금지! 버튼 */}
+        <button
+          className={`w-full py-3 md:py-4 rounded-2xl font-bold text-lg md:text-xl shadow-xl transition-all duration-300 select-none ${
+            swordLevel === 0 
+              ? 'bg-gradient-to-r from-red-500 to-pink-600 text-white hover:from-red-600 hover:to-pink-700' 
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+          }`}
+          onClick={handleMoneyReset}
+          disabled={swordLevel !== 0}
+        >
+          <div className="flex flex-col items-center">
+            <span>🚫 클릭금지!</span>
+            <span className="text-xs font-normal mt-1">
+              {swordLevel === 0 ? '200,000 G 초기화' : `+${swordLevel} 상태에서 사용불가`}
+            </span>
           </div>
         </button>
       </div>
