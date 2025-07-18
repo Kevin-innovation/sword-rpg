@@ -244,11 +244,11 @@ export const REQUIRED_MATERIALS = {
     required_items: ['magic_stone'],
     message: '10강 이상 강화에는 마력석이 필요합니다.'
   },
-  // 15강 이상: 정화수 + 고급보호권 필수
+  // 15강 이상: 정화수 필수
   level_15_plus: {
     threshold: 15,
-    required_items: ['purification_water', 'advanced_protection'],
-    message: '15강 이상 강화에는 정화수와 고급 보호권이 필요합니다.'
+    required_items: ['purification_water'],
+    message: '15강 이상 강화에는 정화수가 필요합니다.'
   },
   // 20강 이상: 전설의 정수 필수
   level_20_plus: {
