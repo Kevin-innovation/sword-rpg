@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useGameState } from "@/store/useGameState";
-import { ORDER_COST } from "@/lib/gameLogic";
+import { ORDER_COST, ITEM_LIMITS } from "@/lib/gameLogic";
 import { apiRequest } from "@/lib/apiUtils";
 
 const initialItems = [
@@ -94,8 +94,10 @@ const Shop = () => {
       return;
     }
     
-    if ((items[id] || 0) >= 10) {
-      alert('최대 10개까지만 보유할 수 있습니다!');
+    // 아이템별 최대 보유량 확인
+    const maxQuantity = ITEM_LIMITS.maxQuantity[id] || 10;
+    if ((items[id] || 0) >= maxQuantity) {
+      alert(`최대 ${maxQuantity}개까지만 보유할 수 있습니다!`);
       return;
     }
     
@@ -148,12 +150,12 @@ const Shop = () => {
             <div>
               <div className="font-semibold text-slate-800 text-base md:text-lg">{item.name}</div>
               <div className="text-xs md:text-sm text-slate-500 mb-1">{item.desc}</div>
-              <div className="text-xs md:text-sm text-slate-400">보유: {(items[item.id] || 0)}/10</div>
+              <div className="text-xs md:text-sm text-slate-400">보유: {(items[item.id] || 0)}/{ITEM_LIMITS.maxQuantity[item.id] || 10}</div>
             </div>
             <button
               className={`mt-2 md:mt-0 px-3 md:px-4 py-1.5 md:py-2 rounded bg-orange-400 text-white text-xs md:text-sm font-semibold shadow hover:bg-orange-500 transition disabled:opacity-50 disabled:cursor-not-allowed`}
               onClick={() => handleBuy(item.id, item.price)}
-              disabled={money < item.price || (items[item.id] || 0) >= 10 || purchasing === item.id}
+              disabled={money < item.price || (items[item.id] || 0) >= (ITEM_LIMITS.maxQuantity[item.id] || 10) || purchasing === item.id}
             >
               {purchasing === item.id ? '구매중...' : `${item.price.toLocaleString()} G 구매`}
             </button>

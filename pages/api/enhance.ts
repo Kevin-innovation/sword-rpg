@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { validateEnhancement } from '../../lib/antiCheat';
-import { calculateEnhanceChance, calculateEnhanceCost, calculateFragmentsGained, FRAGMENT_BOOST_OPTIONS, calculateBoostedChance } from '../../src/lib/gameLogic';
+import { calculateEnhanceChance, calculateEnhanceCost, calculateFragmentsGained, FRAGMENT_BOOST_OPTIONS, calculateBoostedChance, checkRequiredMaterials, calculateMaterialConsumption } from '../../src/lib/gameLogic';
 import { supabase } from '../../lib/supabase';
 import type { User, Sword } from '../../lib/types';
 
@@ -142,11 +142,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(404).json({ error: 'Sword not found' });
   }
 
-  // 4. 아이템 보유 확인 및 강화 확률 계산
+  // 4. 아이템 보유 확인 및 쿨타임 체크
   const usedItems = [];
   if (useDoubleChance) usedItems.push('doubleChance');
   if (useProtect) usedItems.push('protect');
   if (useDiscount) usedItems.push('discount');
+  
+  // 사용할 아이템들의 쿨타임 체크
+  for (const itemType of usedItems) {
+    const { data: cooldownData } = await supabase.rpc('check_item_cooldown', {
+      p_user_id: userId,
+      p_item_type: itemType
+    });
+    
+    if (cooldownData && !cooldownData.can_use) {
+      return res.status(400).json({ 
+        error: `${itemType} 아이템이 쿨타임 중입니다`,
+        details: `남은 시간: ${cooldownData.remaining_minutes}분`
+      });
+    }
+  }
   
   // 아이템 보유 수량 확인 (병렬 처리로 성능 개선)
   if (usedItems.length > 0) {
@@ -206,6 +221,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (user.money < enhanceCost) {
     return res.status(400).json({ error: 'Not enough money' });
   }
+
+  // 필수 재료 검증 (강화 전 확인)
+  const { data: userInventory } = await supabase
+    .from('inventories')
+    .select('item_id, quantity, items(type)')
+    .eq('user_id', userId);
+  
+  const requiredMaterialsCheck = checkRequiredMaterials(currentLevel, userInventory || []);
+  if (!requiredMaterialsCheck.canEnhance) {
+    return res.status(400).json({ 
+      error: requiredMaterialsCheck.message,
+      details: `부족한 재료: ${requiredMaterialsCheck.missingItems.join(', ')}`
+    });
+  }
   const rand = Math.random() * 100;
   let result;
   if (rand < successRate) {
@@ -225,9 +254,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     };
   }
 
-  // 5. 아이템 소비 처리 (응답 전에 처리하여 확실히 반영)
-  const updatedItems = { doubleChance: 0, protect: 0, discount: 0 };
+  // 5. 아이템 소비 처리 및 쿨타임 기록 (응답 전에 처리하여 확실히 반영)
+  const updatedItems = { 
+    doubleChance: 0, 
+    protect: 0, 
+    discount: 0,
+    magic_stone: 0,
+    purification_water: 0,
+    legendary_essence: 0,
+    advanced_protection: 0,
+    blessing_scroll: 0
+  };
   try {
+    // 주문서 아이템 소비 처리
     await Promise.all(usedItems.map(async (itemType) => {
       const { data: item } = await supabase
         .from('items')
@@ -255,11 +294,57 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             .eq('user_id', userId)
             .eq('item_id', item.id);
           
+          // 쿨타임 기록 (주문서 사용 시에만)
+          if (['protect', 'doubleChance', 'discount', 'blessing_scroll', 'advanced_protection'].includes(itemType)) {
+            await supabase.rpc('record_item_usage', {
+              p_user_id: userId,
+              p_item_type: itemType
+            });
+          }
+          
           // 업데이트된 수량 저장
           updatedItems[itemType as keyof typeof updatedItems] = newQuantity;
         }
       }
     }));
+
+    // 필수 재료 소모 처리 (강화 성공/실패 관계없이 소모)
+    const materialConsumption = calculateMaterialConsumption(currentLevel);
+    if (materialConsumption.consumedMaterials.length > 0) {
+      await Promise.all(materialConsumption.consumedMaterials.map(async (materialType) => {
+        const { data: material } = await supabase
+          .from('items')
+          .select('id')
+          .eq('type', materialType)
+          .single();
+        
+        if (material) {
+          const { data: inventory } = await supabase
+            .from('inventories')
+            .select('quantity')
+            .eq('user_id', userId)
+            .eq('item_id', material.id)
+            .single();
+          
+          if (inventory && inventory.quantity > 0) {
+            const newQuantity = inventory.quantity - 1;
+            await supabase
+              .from('inventories')
+              .update({ 
+                quantity: newQuantity,
+                updated_at: new Date().toISOString()
+              })
+              .eq('user_id', userId)
+              .eq('item_id', material.id);
+            
+            // 업데이트된 수량 저장
+            if (updatedItems.hasOwnProperty(materialType)) {
+              updatedItems[materialType as keyof typeof updatedItems] = newQuantity;
+            }
+          }
+        }
+      }));
+    }
   } catch (err) {
     console.error('Item consumption error:', err);
     return res.status(500).json({ error: '아이템 소비 중 오류가 발생했습니다' });

@@ -38,10 +38,19 @@ BEGIN
   FROM inventories
   WHERE user_id = p_user_id AND item_id = target_item_id;
   
-  -- 최대 10개 제한
-  IF current_quantity >= 10 THEN
-    RAISE EXCEPTION '최대 10개까지만 보유할 수 있습니다';
-  END IF;
+  -- 아이템별 최대 보유량 제한 (게임 밸런스 개선)
+  DECLARE
+    max_quantity INTEGER := 10; -- 기본값
+  BEGIN
+    -- 주문서류는 3개로 제한
+    IF p_item_type IN ('protect', 'doubleChance', 'discount', 'blessing_scroll', 'advanced_protection') THEN
+      max_quantity := 3;
+    END IF;
+    
+    IF current_quantity >= max_quantity THEN
+      RAISE EXCEPTION '최대 %개까지만 보유할 수 있습니다', max_quantity;
+    END IF;
+  END;
   
   new_quantity := current_quantity + 1;
   

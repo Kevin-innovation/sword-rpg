@@ -15,6 +15,11 @@ export type GameState = {
     doubleChance: number;
     protect: number;
     discount: number;
+    magic_stone: number;
+    purification_water: number;
+    legendary_essence: number;
+    advanced_protection: number;
+    blessing_scroll: number;
   };
   foundSwords: boolean[];
   isLoadingAchievements: boolean;
@@ -51,6 +56,11 @@ export const useGameState = create<GameState>((set, get) => ({
     doubleChance: 0,
     protect: 0,
     discount: 0,
+    magic_stone: 0,
+    purification_water: 0,
+    legendary_essence: 0,
+    advanced_protection: 0,
+    blessing_scroll: 0,
   },
   foundSwords: (() => { const arr = Array(21).fill(false); arr[0] = true; return arr; })(),
   isLoadingAchievements: false,
@@ -64,7 +74,17 @@ export const useGameState = create<GameState>((set, get) => ({
     fragments: 0,
     enhanceChance: 100,
     enhanceCost: 100,
-    isEnhancing: false
+    isEnhancing: false,
+    items: {
+      doubleChance: 0,
+      protect: 0,
+      discount: 0,
+      magic_stone: 0,
+      purification_water: 0,
+      legendary_essence: 0,
+      advanced_protection: 0,
+      blessing_scroll: 0,
+    }
   }),
   setMoney: (money) => set({ money }),
   setSwordLevel: (swordLevel) => set({

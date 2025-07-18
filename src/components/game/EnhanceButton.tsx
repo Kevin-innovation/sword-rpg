@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useGameState } from "@/store/useGameState";
-import { calculateEnhanceChance, calculateEnhanceCost, calculateFragmentsOnFail, calculateSwordSellPrice, FRAGMENT_BOOST_OPTIONS, canUseFragments, calculateBoostedChance } from "@/lib/gameLogic";
+import { calculateEnhanceChance, calculateEnhanceCost, calculateFragmentsOnFail, calculateSwordSellPrice, FRAGMENT_BOOST_OPTIONS, canUseFragments, calculateBoostedChance, checkRequiredMaterials } from "@/lib/gameLogic";
 import { useGameData } from "@/hooks/useGameData";
 import { apiRequest } from "@/lib/apiUtils";
 import { motion } from "framer-motion";
@@ -30,6 +30,8 @@ export default function EnhanceButton() {
   const [useDiscount, setUseDiscount] = useState(false);
   // 조각 사용 상태
   const [selectedFragmentBoost, setSelectedFragmentBoost] = useState<number | null>(null);
+  // 쿨타임 상태
+  const [cooldowns, setCooldowns] = useState<{[key: string]: number}>({});
   // 이스터에그: 7을 7번 연속 입력하면 77777골드 지급
   const [eggSeq, setEggSeq] = useState<number[]>([]);
   useEffect(() => {
@@ -51,6 +53,32 @@ export default function EnhanceButton() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
+
+  // 쿨타임 상태 확인
+  useEffect(() => {
+    const fetchCooldowns = async () => {
+      if (!user?.id) return;
+      
+      try {
+        const response = await fetch('/api/cooldown', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: user.id })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setCooldowns(data.cooldowns || {});
+        }
+      } catch (error) {
+        console.error('쿨타임 확인 오류:', error);
+      }
+    };
+
+    fetchCooldowns();
+    const interval = setInterval(fetchCooldowns, 60000); // 1분마다 확인
+    return () => clearInterval(interval);
+  }, [user?.id]);
 
   const handleEnhanceInternal = async () => {
     const now = Date.now();
@@ -281,6 +309,16 @@ export default function EnhanceButton() {
 
   const cost = calculateEnhanceCost(swordLevel);
   const canAfford = money >= cost;
+  
+  // 필수 재료 확인 (아이템 스테이트를 인벤토리 형태로 변환)
+  const mockInventory = Object.entries(items).map(([type, quantity]) => ({
+    item_id: type,
+    quantity: quantity || 0,
+    items: { type }
+  }));
+  
+  const requiredMaterialsCheck = checkRequiredMaterials(swordLevel, mockInventory);
+  const canEnhanceWithMaterials = requiredMaterialsCheck.canEnhance;
 
   return (
     <div className="w-full space-y-3">
@@ -341,7 +379,7 @@ export default function EnhanceButton() {
             ${disabled ? "cursor-not-allowed" : "cursor-pointer"}
           `}
           onClick={handleEnhance}
-          disabled={disabled || !canAfford}
+          disabled={disabled || !canAfford || !canEnhanceWithMaterials}
         >
           {/* 배경 효과 - 호버 제거 */}
           
@@ -368,6 +406,11 @@ export default function EnhanceButton() {
                 <span className="text-xl">🚫</span>
                 <span>골드 부족</span>
               </>
+            ) : !canEnhanceWithMaterials ? (
+              <>
+                <span className="text-xl">⚠️</span>
+                <span>재료 부족</span>
+              </>
             ) : (
               <>
                 <span className="text-xl">⚔️</span>
@@ -384,26 +427,37 @@ export default function EnhanceButton() {
         <div className="flex gap-2 md:gap-3 w-full justify-between">
           <button
             className={`flex-1 px-2 md:px-3 py-1 md:py-2 rounded bg-blue-100 text-blue-700 text-xs md:text-sm font-semibold border border-blue-300 transition disabled:opacity-40 disabled:cursor-not-allowed ${useDoubleChance ? 'ring-2 ring-blue-400' : ''}`}
-            disabled={items.doubleChance === 0 || disabled}
+            disabled={items.doubleChance === 0 || disabled || (cooldowns.doubleChance > 0)}
             onClick={() => setUseDoubleChance(v => !v)}
           >
-            확률2배({items.doubleChance})
+            {cooldowns.doubleChance > 0 ? `쿨타임 ${cooldowns.doubleChance}분` : `확률2배(${items.doubleChance})`}
           </button>
           <button
             className={`flex-1 px-2 md:px-3 py-1 md:py-2 rounded bg-green-100 text-green-700 text-xs md:text-sm font-semibold border border-green-300 transition disabled:opacity-40 disabled:cursor-not-allowed ${useProtect ? 'ring-2 ring-green-400' : ''}`}
-            disabled={items.protect === 0 || disabled}
+            disabled={items.protect === 0 || disabled || (cooldowns.protect > 0)}
             onClick={() => setUseProtect(v => !v)}
           >
-            보호({items.protect})
+            {cooldowns.protect > 0 ? `쿨타임 ${cooldowns.protect}분` : `보호(${items.protect})`}
           </button>
           <button
             className={`flex-1 px-2 md:px-3 py-1 md:py-2 rounded bg-yellow-100 text-yellow-700 text-xs md:text-sm font-semibold border border-yellow-300 transition disabled:opacity-40 disabled:cursor-not-allowed ${useDiscount ? 'ring-2 ring-yellow-400' : ''}`}
-            disabled={items.discount === 0 || disabled}
+            disabled={items.discount === 0 || disabled || (cooldowns.discount > 0)}
             onClick={() => setUseDiscount(v => !v)}
           >
-            할인({items.discount})
+            {cooldowns.discount > 0 ? `쿨타임 ${cooldowns.discount}분` : `할인(${items.discount})`}
           </button>
         </div>
+        
+        {/* 필수 재료 정보 표시 */}
+        {!canEnhanceWithMaterials && (
+          <div className="w-full bg-red-50 border border-red-200 rounded-lg p-3">
+            <div className="text-sm font-semibold text-red-700 mb-1">⚠️ 필수 재료 부족</div>
+            <div className="text-xs text-red-600">{requiredMaterialsCheck.message}</div>
+            <div className="text-xs text-red-500 mt-1">
+              부족한 재료: {requiredMaterialsCheck.missingItems.join(', ')}
+            </div>
+          </div>
+        )}
         
         {/* 조각 사용 UI */}
         <div className="w-full">

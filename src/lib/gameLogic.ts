@@ -161,17 +161,61 @@ export const calculateSwordSellPrice = (level: number): number => {
   return Math.floor(base * 3.0);
 };
 
-// 주문서 및 특수 재료 비용 상수
+// 주문서 및 특수 재료 비용 상수 (게임 밸런스 개선을 위한 가격 조정)
 export const ORDER_COST = {
-  protect: 15000,           // 보호 주문서 - 실패 시 레벨 하락 방지
-  doubleChance: 15000,      // 확률 x2 - 강화 성공 확률 2배
-  discount: 15000,          // 비용 절약 - 강화 비용 50% 할인
+  protect: 100000,          // 보호 주문서 - 실패 시 레벨 하락 방지 (15k → 100k)
+  doubleChance: 150000,     // 확률 x2 - 강화 성공 확률 2배 (15k → 150k)
+  discount: 80000,          // 비용 절약 - 강화 비용 50% 할인 (15k → 80k)
   magic_stone: 25000,       // 마력석 - 10강+ 필수 재료
   purification_water: 50000, // 정화수 - 15강+ 필수 재료  
   legendary_essence: 100000, // 전설의 정수 - 20강+ 희귀 재료
-  advanced_protection: 75000, // 고급 보호권 - 15강+ 전용
-  blessing_scroll: 30000     // 축복서 - 연속 성공 보너스
+  advanced_protection: 200000, // 고급 보호권 - 15강+ 전용 (75k → 200k)
+  blessing_scroll: 120000    // 축복서 - 연속 성공 보너스 (30k → 120k)
 };
+
+// 아이템 구매 제한 및 쿨타임 설정
+export const ITEM_LIMITS = {
+  // 기본 주문서 제한 (게임 밸런스를 위해 엄격하게 제한)
+  maxQuantity: {
+    protect: 3,           // 보호 주문서 최대 3개
+    doubleChance: 3,      // 확률 2배 최대 3개
+    discount: 3,          // 할인 주문서 최대 3개
+    blessing_scroll: 3,   // 축복서 최대 3개
+    advanced_protection: 3, // 고급 보호권 최대 3개
+    // 재료는 기존 10개 유지
+    magic_stone: 10,
+    purification_water: 10,
+    legendary_essence: 10
+  },
+  
+  // 주문서 사용 쿨타임 (분 단위)
+  cooldown: {
+    protect: 30,          // 보호 주문서 30분 쿨타임
+    doubleChance: 20,     // 확률 2배 20분 쿨타임
+    discount: 15,         // 할인 주문서 15분 쿨타임
+    blessing_scroll: 25,  // 축복서 25분 쿨타임
+    advanced_protection: 45 // 고급 보호권 45분 쿨타임
+  }
+};
+
+// 아이템 쿨타임 체크 함수
+export function checkItemCooldown(itemType: string, lastUsedTime: number): {
+  canUse: boolean;
+  remainingTime: number;
+} {
+  const cooldownMinutes = ITEM_LIMITS.cooldown[itemType];
+  if (!cooldownMinutes) return { canUse: true, remainingTime: 0 };
+  
+  const now = Date.now();
+  const cooldownMs = cooldownMinutes * 60 * 1000;
+  const elapsed = now - lastUsedTime;
+  const remaining = cooldownMs - elapsed;
+  
+  return {
+    canUse: remaining <= 0,
+    remainingTime: Math.max(0, Math.ceil(remaining / 60000)) // 분 단위로 반환
+  };
+}
 
 // 구간별 필수 재료 시스템
 export const REQUIRED_MATERIALS = {
