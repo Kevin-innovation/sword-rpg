@@ -47,24 +47,24 @@ export function calculateEnhanceCost(level: number): number {
   
   // 0-10강: 기본 구간 (1.5배 증가율)
   if (level <= 10) {
-    return Math.floor(100 * Math.pow(1.5, level));
+    return Math.floor(1000 * Math.pow(1.5, level));
   }
   
   // 11-15강: 중급 구간 (1.8배 증가율)
   if (level <= 15) {
-    const base10 = 100 * Math.pow(1.5, 10); // 10강까지의 기본값
+    const base10 = 1000 * Math.pow(1.5, 10); // 10강까지의 기본값
     return Math.floor(base10 * Math.pow(1.8, level - 10));
   }
   
   // 16-20강: 고급 구간 (2.0배 증가율)
   if (level <= 20) {
-    const base10 = 100 * Math.pow(1.5, 10);
+    const base10 = 1000 * Math.pow(1.5, 10);
     const base15 = base10 * Math.pow(1.8, 5);
     return Math.floor(base15 * Math.pow(2.0, level - 15));
   }
   
   // 21강+: 전설 구간 (2.5배 증가율)
-  const base10 = 100 * Math.pow(1.5, 10);
+  const base10 = 1000 * Math.pow(1.5, 10);
   const base15 = base10 * Math.pow(1.8, 5);
   const base20 = base15 * Math.pow(2.0, 5);
   return Math.floor(base20 * Math.pow(2.5, level - 20));
