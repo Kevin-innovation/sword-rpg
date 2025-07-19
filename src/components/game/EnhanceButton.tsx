@@ -149,6 +149,7 @@ export default function EnhanceButton() {
       setTimeout(() => {
         setMoney(data.newMoney);
         setCustomChance(data.customChance);
+        setEnhanceChance(data.customChance); // 기본 성공 확률에 반영
         setIsRolling(false);
         
         alert(`축하합니다! ${data.customChance}% 확률을 획득했습니다!`);
@@ -309,6 +310,8 @@ export default function EnhanceButton() {
       setSelectedFragmentBoost(null);
       // 커스텀 확률 리셋 (강화 후 초기화)
       setCustomChance(null);
+      // 기본 성공 확률도 원래대로 복원
+      setEnhanceChance(calculateEnhanceChance(data.newLevel));
       
       // API 응답 후 안전한 딜레이로 버튼 활성화 (중복 클릭 방지)
       setTimeout(() => {
