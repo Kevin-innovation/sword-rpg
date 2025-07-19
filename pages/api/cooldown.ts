@@ -34,27 +34,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // 사용자의 모든 쿨타임 상태 조회
-    const { data: cooldownData, error } = await supabase.rpc('get_user_cooldown_status', {
-      p_user_id: userId
-    });
+    // RPC 함수 대신 직접 테이블 조회
+    const { data: cooldownData, error } = await supabase
+      .from('item_cooldowns')
+      .select('item_type, last_used_at')
+      .eq('user_id', userId);
 
     if (error) {
-      console.error('Cooldown check error:', error);
-      return res.status(500).json({ error: 'Failed to check cooldowns' });
+      console.error('Cooldown fetch error:', error);
+      return res.status(500).json({ error: 'Failed to fetch cooldowns' });
     }
 
-    // 쿨타임 데이터를 객체 형태로 변환
+    // 쿨타임 계산
     const cooldowns: {[key: string]: number} = {};
-    if (cooldownData) {
-      cooldownData.forEach((item: any) => {
-        cooldowns[item.item_type] = item.remaining_minutes;
+    const now = new Date();
+    
+    if (cooldownData && Array.isArray(cooldownData)) {
+      cooldownData.forEach((item) => {
+        const lastUsed = new Date(item.last_used_at);
+        const cooldownMinutes = getCooldownMinutes(item.item_type);
+        const elapsedMinutes = (now.getTime() - lastUsed.getTime()) / (1000 * 60);
+        const remainingMinutes = Math.max(0, Math.ceil(cooldownMinutes - elapsedMinutes));
+        
+        cooldowns[item.item_type] = remainingMinutes;
       });
     }
 
     return res.status(200).json({
       success: true,
-      cooldowns
+      cooldowns: cooldowns
     });
 
   } catch (error) {
