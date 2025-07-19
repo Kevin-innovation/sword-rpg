@@ -50,8 +50,8 @@ export const useGameState = create<GameState>((set, get) => ({
   money: 0, // 초기값 0으로 설정, 실제 데이터 로드 전까지 기다림
   swordLevel: 0,
   fragments: 0,
-  enhanceChance: 100,
-  enhanceCost: 100,
+  enhanceChance: 0, // 초기값 0, 실제 데이터 로드 후 설정
+  enhanceCost: 0, // 초기값 0, 실제 데이터 로드 후 설정
   isEnhancing: false,
   items: {
     doubleChance: 0,
@@ -73,8 +73,8 @@ export const useGameState = create<GameState>((set, get) => ({
     money: 0, // 로그아웃시 0으로 리셋
     swordLevel: 0,
     fragments: 0,
-    enhanceChance: 100,
-    enhanceCost: 100,
+    enhanceChance: 0, // 리셋시 0으로 설정
+    enhanceCost: 0, // 리셋시 0으로 설정
     isEnhancing: false,
     items: {
       doubleChance: 0,

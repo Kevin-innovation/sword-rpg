@@ -107,7 +107,8 @@ export function useGameData() {
       }
       
       if (swordData) {
-        setSwordLevelOnly(swordData.level || 0); // enhanceChance 보존
+        // 데이터 로드 시에는 정확한 기본 확률로 설정 (뽑기 확률 없음)
+        setSwordLevel(swordData.level || 0);
       }
       
       // 업적 정보 로드 (사용자 변경시 강제 새로고침)
