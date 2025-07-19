@@ -35,6 +35,8 @@ export default function EnhanceButton() {
   // 강화확률 뽑기 시스템
   const [customChance, setCustomChance] = useState<number | null>(null);
   const [isRolling, setIsRolling] = useState(false);
+  // 강화조각 뽑기 시스템
+  const [isFragmentRolling, setIsFragmentRolling] = useState(false);
   // 이스터에그: 7을 7번 연속 입력하면 77777골드 지급
   const [eggSeq, setEggSeq] = useState<number[]>([]);
   const [zKeyPressed, setZKeyPressed] = useState(false);
@@ -159,6 +161,47 @@ export default function EnhanceButton() {
       console.error('Chance roll error:', error);
       alert(error.message || '뽑기 중 오류가 발생했습니다.');
       setIsRolling(false);
+    }
+  };
+
+  // 강화조각 뽑기 함수
+  const handleFragmentRoll = async () => {
+    if (money < 20000) {
+      alert('골드가 부족합니다! (필요: 20,000G)');
+      return;
+    }
+    
+    if (isFragmentRolling || !user?.id) return;
+    
+    setIsFragmentRolling(true);
+    
+    try {
+      const response = await fetch('/api/fragment-roll', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '뽑기 실패');
+      }
+      
+      const data = await response.json();
+      
+      // 애니메이션 효과
+      setTimeout(() => {
+        setMoney(data.newMoney);
+        setFragments(data.newFragments);
+        setIsFragmentRolling(false);
+        
+        alert(`축하합니다! ${data.fragmentsGained}개의 강화조각을 획득했습니다!`);
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Fragment roll error:', error);
+      alert(error.message || '강화조각 뽑기 중 오류가 발생했습니다.');
+      setIsFragmentRolling(false);
     }
   };
 
@@ -520,12 +563,18 @@ export default function EnhanceButton() {
         </button>
         
         <button
-          className="flex-1 py-2 md:py-3 rounded-xl font-bold text-sm md:text-base shadow-lg bg-gray-300 text-gray-500 cursor-not-allowed"
-          disabled={true}
+          className={`flex-1 py-2 md:py-3 rounded-xl font-bold text-sm md:text-base shadow-lg transition-all duration-300 ${
+            money >= 20000 && !isFragmentRolling
+              ? 'bg-gradient-to-r from-blue-400 to-purple-500 text-white hover:from-blue-500 hover:to-purple-600'
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+          }`}
+          onClick={handleFragmentRoll}
+          disabled={money < 20000 || isFragmentRolling}
         >
           <div className="flex flex-col items-center">
-            <span className="text-lg">🚫</span>
-            <span>클릭 금지</span>
+            <span className="text-lg">{isFragmentRolling ? '🎲' : '🧩'}</span>
+            <span>{isFragmentRolling ? '뽑기 중...' : '강화조각 뽑기'}</span>
+            <span className="text-xs opacity-80">20,000G</span>
           </div>
         </button>
       </div>
