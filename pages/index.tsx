@@ -46,7 +46,7 @@ export default function Home() {
               검 강화하기 by DLAB Kevin
             </h1>
             <p className="text-xs text-white/50 mt-1">
-              최신 버전 : 2025.07.18 v.2.3
+              최신 버전 : 2025.07.19 v.3.0
             </p>
           </div>
           
