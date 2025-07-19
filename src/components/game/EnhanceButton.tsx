@@ -153,7 +153,7 @@ export default function EnhanceButton() {
       setTimeout(() => {
         setMoney(data.newMoney);
         setCustomChance(data.customChance);
-        setEnhanceChance(data.customChance); // 기본 성공 확률에 반영
+        // 기본 성공 확률 텍스트는 건드리지 않음 (버그 방지)
         setIsRolling(false);
         
         alert(`축하합니다! ${data.customChance}% 확률을 획득했습니다!`);
