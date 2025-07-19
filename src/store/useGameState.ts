@@ -29,6 +29,7 @@ export type GameState = {
   reset: () => void;
   setMoney: (money: number) => void;
   setSwordLevel: (level: number) => void;
+  setSwordLevelOnly: (level: number) => void;
   setFragments: (fragments: number) => void;
   setEnhanceChance: (chance: number) => void;
   setEnhanceCost: (cost: number) => void;
