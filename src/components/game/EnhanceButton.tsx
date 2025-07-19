@@ -353,6 +353,10 @@ export default function EnhanceButton() {
     
     if (isSelling) return;
     
+    // 판매 확인 창
+    const confirmSell = confirm(`정말로 +${swordLevel}강 검을 ${sellPrice.toLocaleString()} G에 판매하시겠습니까?`);
+    if (!confirmSell) return;
+    
     setIsSelling(true);
     
     try {
