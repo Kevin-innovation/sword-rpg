@@ -695,7 +695,7 @@ export default function EnhanceButton() {
           disabled={swordLevel !== 0}
         >
           <div className="flex items-center justify-center">
-            <span>🚫 클릭금지!</span>
+            <span>🔄 골드 / 인벤토리 초기화!</span>
           </div>
         </button>
       </div>
