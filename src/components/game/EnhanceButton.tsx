@@ -121,50 +121,50 @@ export default function EnhanceButton() {
   }, [user?.id]);
 
   // 강화확률 뽑기 함수
-  const handleChanceRoll = () => {
+  const handleChanceRoll = async () => {
     if (money < 20000) {
       alert('골드가 부족합니다! (필요: 20,000G)');
       return;
     }
     
-    if (isRolling) return;
+    if (isRolling || !user?.id) return;
     
     setIsRolling(true);
-    setMoney(money - 20000);
     
-    // 확률 계산
-    const rand = Math.random() * 100;
-    let newChance;
-    
-    if (rand < 80) {
-      // 1~30% (80% 확률)
-      newChance = Math.floor(Math.random() * 30) + 1;
-    } else if (rand < 90) {
-      // 40~50% (10% 확률)  
-      newChance = Math.floor(Math.random() * 11) + 40;
-    } else if (rand < 95) {
-      // 60~80% (5% 확률)
-      newChance = Math.floor(Math.random() * 21) + 60;
-    } else if (rand < 98) {
-      // 80~90% (3% 확률)
-      newChance = Math.floor(Math.random() * 11) + 80;
-    } else {
-      // 100% (2% 확률)
-      newChance = 100;
-    }
-    
-    // 애니메이션 효과
-    setTimeout(() => {
-      setCustomChance(newChance);
-      setIsRolling(false);
-      if (newChance >= 80) {
-        alert(`🎉 대박! ${newChance}% 확률을 획득했습니다!`);
-      } else if (newChance >= 60) {
-        alert(`✨ 좋은 확률! ${newChance}%를 획득했습니다!`);
-      } else if (newChance >= 40) {
-        alert(`👍 괜찮은 확률! ${newChance}%를 획득했습니다!`);
+    try {
+      const response = await fetch('/api/chance-roll', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '뽑기 실패');
       }
-    }, 1000);
+      
+      const data = await response.json();
+      
+      // 애니메이션 효과
+      setTimeout(() => {
+        setMoney(data.newMoney);
+        setCustomChance(data.customChance);
+        setIsRolling(false);
+        
+        if (data.customChance >= 80) {
+          alert(`🎉 대박! ${data.customChance}% 확률을 획득했습니다!`);
+        } else if (data.customChance >= 60) {
+          alert(`✨ 좋은 확률! ${data.customChance}%를 획득했습니다!`);
+        } else if (data.customChance >= 40) {
+          alert(`👍 괜찮은 확률! ${data.customChance}%를 획득했습니다!`);
+        }
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Chance roll error:', error);
+      alert(error.message || '뽑기 중 오류가 발생했습니다.');
+      setIsRolling(false);
+    }
   };
 
   const handleEnhanceInternal = async () => {
