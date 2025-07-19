@@ -402,7 +402,8 @@ export default function SwordDisplay() {
             <img 
               src={`/images/swords/${(() => {
                 if (swordLevel <= 13) return Math.min(swordLevel + 1, 14);
-                return 8 + ((swordLevel - 14) % 6);
+                // 14강 이상: 15.png, 16.png, 17.png, 18.png, 19.png 순환
+                return 15 + ((swordLevel - 14) % 5);
               })()}.png`} 
               alt={swordNames[swordLevel] || "미지의 검"} 
               className={`w-24 h-24 sm:w-32 sm:h-32 object-contain mx-auto transition-all duration-300 ${getAuraEffect()} ${

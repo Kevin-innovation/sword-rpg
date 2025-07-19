@@ -10,8 +10,8 @@ const swordImgs = Array.from({length: 21}, (_, i) => {
   if (i <= 13) {
     return `/images/swords/${i + 1}.png`;
   } else {
-    // 14강 이상은 순환: 14강=8.png, 15강=9.png, 16강=10.png, 17강=11.png, 18강=12.png, 19강=13.png, 20강=14.png
-    return `/images/swords/${8 + ((i - 14) % 7)}.png`;
+    // 14강 이상은 순환: 14강=15.png, 15강=16.png, 16강=17.png, 17강=18.png, 18강=19.png, 19강=15.png, 20강=16.png
+    return `/images/swords/${15 + ((i - 14) % 5)}.png`;
   }
 });
 
