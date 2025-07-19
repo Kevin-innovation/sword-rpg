@@ -26,7 +26,7 @@ export default function StatsPanel() {
     },
     { 
       icon: "🎲", 
-      label: "성공 확률", 
+      label: "기본 성공 확률", 
       value: `${enhanceChance}%`, 
       color: "from-purple-400 to-purple-600",
       bgColor: "bg-purple-50",

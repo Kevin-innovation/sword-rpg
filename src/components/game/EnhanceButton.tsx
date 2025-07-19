@@ -507,7 +507,7 @@ export default function EnhanceButton() {
             <span>{isRolling ? '뽑기 중...' : '강화확률 뽑기'}</span>
             <span className="text-xs opacity-80">20,000G</span>
             {customChance && (
-              <span className="text-xs font-normal">현재: {customChance}%</span>
+              <span className="text-xs font-normal">당첨! {customChance}%!</span>
             )}
           </div>
         </button>
@@ -519,7 +519,6 @@ export default function EnhanceButton() {
           <div className="flex flex-col items-center">
             <span className="text-lg">🚫</span>
             <span>클릭 금지</span>
-            <span className="text-xs opacity-80">디버깅 예정</span>
           </div>
         </button>
       </div>
