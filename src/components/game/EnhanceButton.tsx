@@ -120,13 +120,18 @@ export default function EnhanceButton() {
   const handleEnhanceInternal = async () => {
     const now = Date.now();
     
-    // 중복 요청 완전 차단 + 10ms 디바운싱으로 단축
-    if (disabled || isProcessing || (now - lastClickTime < 10)) return;
+    // 중복 요청 완전 차단 + 1초 디바운싱으로 강화
+    if (disabled || isProcessing || (now - lastClickTime < 1000)) {
+      console.log('Enhancement blocked - too fast clicking');
+      return;
+    }
     
     setLastClickTime(now);
     setIsProcessing(true);
     setDisabled(true);
     setAnim(true);
+    
+    console.log('Enhancement started at:', new Date().toISOString());
     
     if (!user?.id) {
       alert("로그인이 필요합니다!");
@@ -258,9 +263,12 @@ export default function EnhanceButton() {
       // 조각 사용 상태 리셋
       setSelectedFragmentBoost(null);
       
-      // API 응답 후 즉시 버튼 활성화 (애니메이션은 계속 유지)
-      setDisabled(false);
-      setIsProcessing(false);
+      // API 응답 후 안전한 딜레이로 버튼 활성화 (중복 클릭 방지)
+      setTimeout(() => {
+        setDisabled(false);
+        setIsProcessing(false);
+        console.log('Enhancement process completed');
+      }, 500); // 0.5초 딜레이
       
     } catch (e) {
       console.error("강화 오류:", e);
@@ -277,9 +285,13 @@ export default function EnhanceButton() {
       }
       
       alert(errorMessage);
-      setDisabled(false);
-      setAnim(false);
-      setIsProcessing(false);
+      // 에러 시에도 안전한 딜레이로 버튼 활성화
+      setTimeout(() => {
+        setDisabled(false);
+        setAnim(false);
+        setIsProcessing(false);
+        console.log('Enhancement error handled');
+      }, 500);
     }
     
     // 게이지 애니메이션과 기존 애니메이션 종료 처리 - 빠르게 정리
@@ -459,11 +471,12 @@ export default function EnhanceButton() {
               ? "bg-gradient-to-r from-green-400 to-emerald-500 text-white" 
               : result === "fail" 
                 ? "bg-gradient-to-r from-red-400 to-red-500 text-white"
-                : canAfford
-                  ? "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white"
-                  : "bg-gradient-to-r from-gray-300 to-gray-400 text-gray-600"
+                : (disabled || isProcessing)
+                  ? "bg-gradient-to-r from-gray-400 to-gray-500 text-gray-300 cursor-not-allowed opacity-60"
+                  : canAfford
+                    ? "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white cursor-pointer"
+                    : "bg-gradient-to-r from-gray-300 to-gray-400 text-gray-600 cursor-not-allowed"
             }
-            ${disabled ? "cursor-not-allowed" : "cursor-pointer"}
           `}
           onClick={handleEnhance}
           disabled={disabled || !canAfford || !canEnhanceWithMaterials}
@@ -497,6 +510,12 @@ export default function EnhanceButton() {
               <>
                 <span className="text-xl">⚠️</span>
                 <span>재료 부족</span>
+              </>
+            ) : (disabled || isProcessing) ? (
+              <>
+                <span className="text-xl">⏳</span>
+                <span>처리 중...</span>
+                <span className="text-xl">⏳</span>
               </>
             ) : (
               <>
