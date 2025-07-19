@@ -6,7 +6,7 @@ import { apiRequest } from "@/lib/apiUtils";
 import { motion } from "framer-motion";
 
 export default function EnhanceButton() {
-  const { money, swordLevel, setMoney, setSwordLevel, setEnhanceChance, setEnhanceCost, fragments, setFragments, refreshRanking } = useGameState();
+  const { money, swordLevel, setMoney, setSwordLevel, setSwordLevelOnly, setEnhanceChance, setEnhanceCost, fragments, setFragments, refreshRanking } = useGameState();
   const { loading: dataLoading, updateUserData, updateSwordLevel } = useGameData();
   const [result, setResult] = useState<null | "success" | "fail">(null);
   const [anim, setAnim] = useState(false);
@@ -265,11 +265,11 @@ export default function EnhanceButton() {
         setGaugeResult('success');
         // 성공 결과를 잠깐 보여준 후 상태 업데이트
         setTimeout(() => {
-          const prevCustomChance = customChance; // 현재 커스텀 확률 저장
-          setSwordLevel(data.newLevel);
-          // 커스텀 확률이 있었다면 다시 설정 (setSwordLevel이 기본값으로 덮어쓰기 때문)
-          if (prevCustomChance) {
-            setEnhanceChance(prevCustomChance);
+          // 커스텀 확률이 있으면 enhanceChance를 보존하는 함수 사용
+          if (customChance) {
+            setSwordLevelOnly(data.newLevel);
+          } else {
+            setSwordLevel(data.newLevel);
           }
           setResult("success");
           // 성공시 업적 실시간 업데이트
@@ -287,11 +287,11 @@ export default function EnhanceButton() {
         }, 200);
         // 실패 결과를 잠깐 보여준 후 상태 업데이트
         setTimeout(() => {
-          const prevCustomChance = customChance; // 현재 커스텀 확률 저장
-          setSwordLevel(data.newLevel);
-          // 커스텀 확률이 있었다면 다시 설정 (setSwordLevel이 기본값으로 덮어쓰기 때문)
-          if (prevCustomChance) {
-            setEnhanceChance(prevCustomChance);
+          // 커스텀 확률이 있으면 enhanceChance를 보존하는 함수 사용
+          if (customChance) {
+            setSwordLevelOnly(data.newLevel);
+          } else {
+            setSwordLevel(data.newLevel);
           }
           setResult("fail");
           // 실패시 조각 업데이트

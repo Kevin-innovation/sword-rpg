@@ -92,6 +92,11 @@ export const useGameState = create<GameState>((set, get) => ({
     enhanceChance: calculateEnhanceChance(swordLevel),
     enhanceCost: calculateEnhanceCost(swordLevel)
   }),
+  setSwordLevelOnly: (swordLevel) => set({
+    swordLevel,
+    enhanceCost: calculateEnhanceCost(swordLevel)
+    // enhanceChance는 건드리지 않음 (커스텀 확률 유지)
+  }),
   setFragments: (fragments) => set({ fragments }),
   setEnhanceChance: (enhanceChance) => set({ enhanceChance }),
   setEnhanceCost: (enhanceCost) => set({ enhanceCost }),
