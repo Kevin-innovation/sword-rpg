@@ -224,6 +224,8 @@ export default function EnhanceButton() {
     }
     
     setLastClickTime(now);
+    // 🔒 강화 시작 즉시 전역 잠금 활성화 (연타 및 모든 중복 작업 차단)
+    setIsGlobalLocked(true);
     setIsProcessing(true);
     setDisabled(true);
     setAnim(true);
@@ -232,6 +234,7 @@ export default function EnhanceButton() {
     
     if (!user?.id) {
       alert("로그인이 필요합니다!");
+      setIsGlobalLocked(false);
       setDisabled(false);
       setAnim(false);
       setIsProcessing(false);
@@ -377,6 +380,7 @@ export default function EnhanceButton() {
       
       // API 응답 후 안전한 딜레이로 버튼 활성화 (중복 클릭 방지)
       setTimeout(() => {
+        setIsGlobalLocked(false); // 🔓 전역 잠금 해제
         setDisabled(false);
         setIsProcessing(false);
         console.log('Enhancement process completed');
@@ -399,6 +403,7 @@ export default function EnhanceButton() {
       alert(errorMessage);
       // 에러 시에도 안전한 딜레이로 버튼 활성화
       setTimeout(() => {
+        setIsGlobalLocked(false); // 🔓 에러 시에도 전역 잠금 해제
         setDisabled(false);
         setAnim(false);
         setIsProcessing(false);
