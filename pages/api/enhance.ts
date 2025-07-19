@@ -149,18 +149,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (useProtect) usedItems.push('protect');
   if (useDiscount) usedItems.push('discount');
   
-  // 사용할 아이템들의 쿨타임 체크
+  // 사용할 아이템들의 쿨타임 체크 (에러 핸들링 강화)
   for (const itemType of usedItems) {
-    const { data: cooldownData } = await supabase.rpc('check_item_cooldown', {
-      p_user_id: userId,
-      p_item_type: itemType
-    });
-    
-    if (cooldownData && !cooldownData.can_use) {
-      return res.status(400).json({ 
-        error: `${itemType} 아이템이 쿨타임 중입니다`,
-        details: `남은 시간: ${cooldownData.remaining_minutes}분`
+    try {
+      const { data: cooldownData, error: cooldownError } = await supabase.rpc('check_item_cooldown', {
+        p_user_id: userId,
+        p_item_type: itemType
       });
+      
+      if (cooldownError) {
+        console.error(`Cooldown check error for ${itemType}:`, cooldownError);
+        // 쿨타임 체크 실패 시 사용 허용 (안전한 기본값)
+        continue;
+      }
+      
+      if (cooldownData && !cooldownData.can_use) {
+        return res.status(400).json({ 
+          error: `${itemType} 아이템이 쿨타임 중입니다`,
+          details: `남은 시간: ${cooldownData.remaining_minutes}분`
+        });
+      }
+    } catch (error) {
+      console.error(`Exception checking cooldown for ${itemType}:`, error);
+      // 예외 발생 시 사용 허용 (안전한 기본값)
+      continue;
     }
   }
   
@@ -300,19 +312,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             .eq('user_id', userId)
             .eq('item_id', item.id);
           
-          // 쿨타임 기록 (주문서 사용 시에만)
-          if (['protect', 'doubleChance', 'discount', 'blessing_scroll', 'advanced_protection'].includes(itemType)) {
-            await supabase.rpc('record_item_usage', {
-              p_user_id: userId,
-              p_item_type: itemType
-            });
-          }
+          // 쿨타임 기록은 병렬 처리 후 별도로 실행
           
           // 업데이트된 수량 저장
           updatedItems[itemType as keyof typeof updatedItems] = newQuantity;
         }
       }
     }));
+
+    // 쿨타임 기록 (순차 처리로 충돌 방지)
+    for (const itemType of usedItems) {
+      if (['protect', 'doubleChance', 'discount', 'blessing_scroll', 'advanced_protection'].includes(itemType)) {
+        try {
+          const { error: cooldownError } = await supabase.rpc('record_item_usage', {
+            p_user_id: userId,
+            p_item_type: itemType
+          });
+          
+          if (cooldownError) {
+            console.error(`Cooldown record error for ${itemType}:`, cooldownError);
+          }
+        } catch (error) {
+          console.error(`Exception recording cooldown for ${itemType}:`, error);
+        }
+      }
+    }
 
     // 필수 재료 소모 처리 (강화 성공/실패 관계없이 소모)
     const materialConsumption = calculateMaterialConsumption(currentLevel);
