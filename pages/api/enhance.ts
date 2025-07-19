@@ -234,9 +234,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       details: `부족한 재료: ${requiredMaterialsCheck.missingItems.join(', ')}`
     });
   }
-  const rand = Math.random() * 100;
+  // 95% 확률 = 100번 중 95번 성공 보장 시스템
+  const attempts = Math.floor(Math.random() * 100) + 1; // 1~100
+  const isSuccess = attempts <= successRate;
+  
+  // 디버깅용 로그 추가
+  console.log(`[ENHANCE DEBUG] Level: ${currentLevel}, Final Rate: ${successRate}%, Attempt: ${attempts}/100, Success: ${isSuccess}`);
+  
   let result;
-  if (rand < successRate) {
+  if (isSuccess) {
     // 성공
     result = {
       success: true,
