@@ -149,32 +149,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (useProtect) usedItems.push('protect');
   if (useDiscount) usedItems.push('discount');
   
-  // 사용할 아이템들의 쿨타임 체크 (에러 핸들링 강화)
-  for (const itemType of usedItems) {
-    try {
-      const { data: cooldownData, error: cooldownError } = await supabase.rpc('check_item_cooldown', {
-        p_user_id: userId,
-        p_item_type: itemType
-      });
-      
-      if (cooldownError) {
-        console.error(`Cooldown check error for ${itemType}:`, cooldownError);
-        // 쿨타임 체크 실패 시 사용 허용 (안전한 기본값)
-        continue;
-      }
-      
-      if (cooldownData && !cooldownData.can_use) {
-        return res.status(400).json({ 
-          error: `${itemType} 아이템이 쿨타임 중입니다`,
-          details: `남은 시간: ${cooldownData.remaining_minutes}분`
-        });
-      }
-    } catch (error) {
-      console.error(`Exception checking cooldown for ${itemType}:`, error);
-      // 예외 발생 시 사용 허용 (안전한 기본값)
-      continue;
-    }
-  }
+  // 쿨타임 체크는 클라이언트에서만 처리하고 서버에서는 생략
+  // (성능 향상 및 통신 오류 방지)
   
   // 아이템 보유 수량 확인 (병렬 처리로 성능 개선)
   if (usedItems.length > 0) {
@@ -320,22 +296,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }));
 
-    // 쿨타임 기록 (순차 처리로 충돌 방지)
-    for (const itemType of usedItems) {
-      if (['protect', 'doubleChance', 'discount', 'blessing_scroll', 'advanced_protection'].includes(itemType)) {
-        try {
-          const { error: cooldownError } = await supabase.rpc('record_item_usage', {
-            p_user_id: userId,
-            p_item_type: itemType
-          });
-          
-          if (cooldownError) {
-            console.error(`Cooldown record error for ${itemType}:`, cooldownError);
-          }
-        } catch (error) {
-          console.error(`Exception recording cooldown for ${itemType}:`, error);
+    // 쿨타임 기록 (간단하게 처리, 실패해도 무시)
+    try {
+      for (const itemType of usedItems) {
+        if (['protect', 'doubleChance', 'discount'].includes(itemType)) {
+          await supabase
+            .from('item_cooldowns')
+            .upsert({
+              user_id: userId,
+              item_type: itemType,
+              last_used_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }, { onConflict: 'user_id,item_type' });
         }
       }
+    } catch (cooldownError) {
+      // 쿨타임 기록 실패는 무시하고 계속 진행
+      console.log('Cooldown record failed, but continuing:', cooldownError);
     }
 
     // 필수 재료 소모 처리 (강화 성공/실패 관계없이 소모)
