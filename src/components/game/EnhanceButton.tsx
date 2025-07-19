@@ -32,6 +32,9 @@ export default function EnhanceButton() {
   const [selectedFragmentBoost, setSelectedFragmentBoost] = useState<number | null>(null);
   // 쿨타임 상태
   const [cooldowns, setCooldowns] = useState<{[key: string]: number}>({});
+  // 강화확률 뽑기 시스템
+  const [customChance, setCustomChance] = useState<number | null>(null);
+  const [isRolling, setIsRolling] = useState(false);
   // 이스터에그: 7을 7번 연속 입력하면 77777골드 지급
   const [eggSeq, setEggSeq] = useState<number[]>([]);
   const [zKeyPressed, setZKeyPressed] = useState(false);
@@ -117,6 +120,53 @@ export default function EnhanceButton() {
     return () => clearInterval(interval);
   }, [user?.id]);
 
+  // 강화확률 뽑기 함수
+  const handleChanceRoll = () => {
+    if (money < 20000) {
+      alert('골드가 부족합니다! (필요: 20,000G)');
+      return;
+    }
+    
+    if (isRolling) return;
+    
+    setIsRolling(true);
+    setMoney(money - 20000);
+    
+    // 확률 계산
+    const rand = Math.random() * 100;
+    let newChance;
+    
+    if (rand < 80) {
+      // 1~30% (80% 확률)
+      newChance = Math.floor(Math.random() * 30) + 1;
+    } else if (rand < 90) {
+      // 40~50% (10% 확률)  
+      newChance = Math.floor(Math.random() * 11) + 40;
+    } else if (rand < 95) {
+      // 60~80% (5% 확률)
+      newChance = Math.floor(Math.random() * 21) + 60;
+    } else if (rand < 98) {
+      // 80~90% (3% 확률)
+      newChance = Math.floor(Math.random() * 11) + 80;
+    } else {
+      // 100% (2% 확률)
+      newChance = 100;
+    }
+    
+    // 애니메이션 효과
+    setTimeout(() => {
+      setCustomChance(newChance);
+      setIsRolling(false);
+      if (newChance >= 80) {
+        alert(`🎉 대박! ${newChance}% 확률을 획득했습니다!`);
+      } else if (newChance >= 60) {
+        alert(`✨ 좋은 확률! ${newChance}%를 획득했습니다!`);
+      } else if (newChance >= 40) {
+        alert(`👍 괜찮은 확률! ${newChance}%를 획득했습니다!`);
+      }
+    }, 1000);
+  };
+
   const handleEnhanceInternal = async () => {
     const now = Date.now();
     
@@ -160,7 +210,8 @@ export default function EnhanceButton() {
           useProtect,
           useDiscount,
           useFragmentBoost: selectedFragmentBoost,
-          secretBoost: zKeyPressed
+          secretBoost: zKeyPressed,
+          customChance: customChance
         })
       });
     
@@ -262,6 +313,8 @@ export default function EnhanceButton() {
       
       // 조각 사용 상태 리셋
       setSelectedFragmentBoost(null);
+      // 커스텀 확률 리셋 (강화 후 초기화)
+      setCustomChance(null);
       
       // API 응답 후 안전한 딜레이로 버튼 활성화 (중복 클릭 방지)
       setTimeout(() => {
@@ -436,6 +489,39 @@ export default function EnhanceButton() {
             style={{ width: `${Math.min((money / cost) * 100, 100)}%` }}
           ></div>
         </div>
+      </div>
+
+      {/* 강화확률 뽑기 & 디버깅 버튼 */}
+      <div className="flex gap-2 md:gap-3 w-full">
+        <button
+          className={`flex-1 py-2 md:py-3 rounded-xl font-bold text-sm md:text-base shadow-lg transition-all duration-300 ${
+            money >= 20000 && !isRolling
+              ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white hover:from-yellow-500 hover:to-orange-600'
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+          }`}
+          onClick={handleChanceRoll}
+          disabled={money < 20000 || isRolling}
+        >
+          <div className="flex flex-col items-center">
+            <span className="text-lg">{isRolling ? '🎲' : '🎯'}</span>
+            <span>{isRolling ? '뽑기 중...' : '강화확률 뽑기'}</span>
+            <span className="text-xs opacity-80">20,000G</span>
+            {customChance && (
+              <span className="text-xs font-normal">현재: {customChance}%</span>
+            )}
+          </div>
+        </button>
+        
+        <button
+          className="flex-1 py-2 md:py-3 rounded-xl font-bold text-sm md:text-base shadow-lg bg-gray-300 text-gray-500 cursor-not-allowed"
+          disabled={true}
+        >
+          <div className="flex flex-col items-center">
+            <span className="text-lg">🚫</span>
+            <span>클릭 금지</span>
+            <span className="text-xs opacity-80">디버깅 예정</span>
+          </div>
+        </button>
       </div>
 
       <div className="w-full flex flex-col gap-2 md:gap-3">

@@ -35,7 +35,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     useProtect = false,
     useDiscount = false,
     useFragmentBoost = null,
-    secretBoost = false
+    secretBoost = false,
+    customChance = null
   } = req.body;
 
   // 1. 기본 유효성 검증
@@ -204,6 +205,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   let successRate = calculateEnhanceChance(currentLevel);
   if (secretBoost) {
     successRate = 100;
+  } else if (customChance !== null && typeof customChance === 'number') {
+    // 커스텀 확률이 있으면 그것을 기본값으로 사용
+    successRate = customChance;
+    if (useDoubleChance) successRate = Math.min(successRate * 2, 100);
+    if (fragmentBoost > 0) successRate = calculateBoostedChance(successRate, fragmentBoost);
   } else {
     if (useDoubleChance) successRate = Math.min(successRate * 2, 100);
     if (fragmentBoost > 0) successRate = calculateBoostedChance(successRate, fragmentBoost);
