@@ -320,7 +320,8 @@ export default function EnhanceButton() {
       setSelectedFragmentBoost(null);
       // 커스텀 확률 리셋 (강화 후 초기화)
       setCustomChance(null);
-      // 주의: enhanceChance는 리셋하지 않음 (뽑기 확률 유지)
+      // 강화 완료 후 새로운 레벨의 기본 확률로 업데이트
+      setEnhanceChance(calculateEnhanceChance(data.newLevel));
       
       // API 응답 후 안전한 딜레이로 버튼 활성화 (중복 클릭 방지)
       setTimeout(() => {
