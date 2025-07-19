@@ -8,7 +8,7 @@ const lastLoadTime = new Map<string, number>();
 const LOAD_COOLDOWN = 1000; // 1초 쿨다운으로 단축
 
 export function useGameData() {
-  const { user, setMoney, setSwordLevel, setFragments, setItems, loadUserAchievements } = useGameState();
+  const { user, setMoney, setSwordLevel, setSwordLevelOnly, setFragments, setItems, loadUserAchievements } = useGameState();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -107,7 +107,7 @@ export function useGameData() {
       }
       
       if (swordData) {
-        setSwordLevel(swordData.level || 0);
+        setSwordLevelOnly(swordData.level || 0); // enhanceChance 보존
       }
       
       // 업적 정보 로드 (사용자 변경시 강제 새로고침)
@@ -174,7 +174,7 @@ export function useGameData() {
       if (error) throw error;
       
       // 로컬 상태 업데이트
-      setSwordLevel(level);
+      setSwordLevelOnly(level); // enhanceChance 보존
       
     } catch (err) {
       console.error('검 레벨 업데이트 오류:', err);
