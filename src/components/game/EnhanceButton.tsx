@@ -151,13 +151,7 @@ export default function EnhanceButton() {
         setCustomChance(data.customChance);
         setIsRolling(false);
         
-        if (data.customChance >= 80) {
-          alert(`🎉 대박! ${data.customChance}% 확률을 획득했습니다!`);
-        } else if (data.customChance >= 60) {
-          alert(`✨ 좋은 확률! ${data.customChance}%를 획득했습니다!`);
-        } else if (data.customChance >= 40) {
-          alert(`👍 괜찮은 확률! ${data.customChance}%를 획득했습니다!`);
-        }
+        alert(`축하합니다! ${data.customChance}% 확률을 획득했습니다!`);
       }, 1000);
       
     } catch (error) {
