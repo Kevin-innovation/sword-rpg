@@ -318,7 +318,18 @@ export default function EnhanceButton() {
       if (response.ok) {
         const data = await response.json();
         setMoney(data.newMoney);
-        alert('금액이 200,000골드로 초기화되었습니다!');
+        // 인벤토리 아이템들도 모두 0으로 초기화
+        setItems({
+          doubleChance: 0,
+          protect: 0,
+          discount: 0,
+          magic_stone: 0,
+          purification_water: 0,
+          legendary_essence: 0,
+          advanced_protection: 0,
+          blessing_scroll: 0
+        });
+        alert(data.message || '금액과 인벤토리가 초기화되었습니다!');
       } else {
         const errorData = await response.json();
         alert(`오류: ${errorData.error}`);

@@ -23,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     // 사용자 금액을 200,000으로 초기화
-    const { data: user, error } = await supabase
+    const { data: user, error: userError } = await supabase
       .from('users')
       .update({ 
         money: 200000,
@@ -33,15 +33,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .select('money')
       .single();
 
-    if (error) {
-      console.error('Money reset error:', error);
+    if (userError) {
+      console.error('Money reset error:', userError);
       return res.status(500).json({ error: 'Failed to reset money' });
+    }
+
+    // 인벤토리의 모든 주문서 수량을 0으로 초기화
+    const { error: inventoryError } = await supabase
+      .from('inventories')
+      .update({ 
+        quantity: 0,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', userId);
+
+    if (inventoryError) {
+      console.error('Inventory reset error:', inventoryError);
+      // 인벤토리 초기화 실패해도 금액 초기화는 성공으로 처리
     }
 
     return res.status(200).json({
       success: true,
       newMoney: user.money,
-      message: '금액이 200,000골드로 초기화되었습니다!'
+      message: '금액과 인벤토리가 초기화되었습니다!'
     });
 
   } catch (error) {
