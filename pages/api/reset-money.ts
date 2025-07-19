@@ -22,15 +22,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // 사용자 금액을 200,000으로 초기화
+    // 사용자 금액과 강화조각을 초기화
     const { data: user, error: userError } = await supabase
       .from('users')
       .update({ 
         money: 200000,
+        fragments: 0,
         updated_at: new Date().toISOString()
       })
       .eq('id', userId)
-      .select('money')
+      .select('money, fragments')
       .single();
 
     if (userError) {
@@ -55,7 +56,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).json({
       success: true,
       newMoney: user.money,
-      message: '금액과 인벤토리가 초기화되었습니다!'
+      newFragments: user.fragments,
+      message: '금액, 인벤토리, 강화조각이 초기화되었습니다!'
     });
 
   } catch (error) {

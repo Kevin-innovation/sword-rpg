@@ -332,6 +332,7 @@ export default function EnhanceButton() {
       if (response.ok) {
         const data = await response.json();
         setMoney(data.newMoney);
+        setFragments(data.newFragments || 0);
         // 인벤토리 아이템들도 모두 0으로 초기화
         setItems({
           doubleChance: 0,
