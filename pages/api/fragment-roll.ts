@@ -39,8 +39,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Not enough money' });
     }
 
-    // 강화조각 2개 지급 (고정)
-    const fragmentsGained = 2;
+    // 강화조각 10개 지급 (고정)
+    const fragmentsGained = 10;
 
     // 골드 차감 및 조각 추가
     const { data: updatedUser, error: updateError } = await supabase

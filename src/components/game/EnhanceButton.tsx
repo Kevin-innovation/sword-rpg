@@ -14,6 +14,7 @@ export default function EnhanceButton() {
   const [isProcessing, setIsProcessing] = useState(false); // 중복 요청 방지
   const [lastClickTime, setLastClickTime] = useState(0); // 디바운싱용
   const [isSelling, setIsSelling] = useState(false); // 판매 중 상태
+  const [isGlobalLocked, setIsGlobalLocked] = useState(false); // 전역 잠금 (판매/강화 동시 방지)
   // 강화 게이지 애니메이션 상태
   const [showGauge, setShowGauge] = useState(false);
   const [gaugeProgress, setGaugeProgress] = useState(0);
@@ -129,7 +130,8 @@ export default function EnhanceButton() {
       return;
     }
     
-    if (isRolling || !user?.id) return;
+    // 🚨 전역 잠금 확인 (판매/강화 중 뽑기 방지)
+    if (isRolling || !user?.id || isGlobalLocked || isSelling) return;
     
     setIsRolling(true);
     
@@ -171,7 +173,8 @@ export default function EnhanceButton() {
       return;
     }
     
-    if (isFragmentRolling || !user?.id) return;
+    // 🚨 전역 잠금 확인 (판매/강화 중 뽑기 방지)
+    if (isFragmentRolling || !user?.id || isGlobalLocked || isSelling) return;
     
     setIsFragmentRolling(true);
     
@@ -207,6 +210,12 @@ export default function EnhanceButton() {
 
   const handleEnhanceInternal = async () => {
     const now = Date.now();
+    
+    // 🚨 치명적 버그 방지: 전역 잠금 확인 (판매/강화 동시 실행 방지)
+    if (isGlobalLocked || isSelling) {
+      console.log('Enhancement blocked - global lock active or selling in progress');
+      return;
+    }
     
     // 중복 요청 완전 차단 + 1초 디바운싱으로 강화
     if (disabled || isProcessing || (now - lastClickTime < 1000)) {
@@ -469,12 +478,15 @@ export default function EnhanceButton() {
       return;
     }
     
-    if (isSelling) return;
+    // 🚨 치명적 버그 방지: 전역 잠금 확인 (판매/강화 동시 실행 방지)
+    if (isSelling || isGlobalLocked) return;
     
     // 판매 확인 창
     const confirmSell = confirm(`정말로 +${swordLevel}강 검을 ${sellPrice.toLocaleString()} G에 판매하시겠습니까?`);
     if (!confirmSell) return;
     
+    // 🔒 전역 잠금 활성화 (강화 버튼 완전 차단)
+    setIsGlobalLocked(true);
     setIsSelling(true);
     
     try {
@@ -506,6 +518,8 @@ export default function EnhanceButton() {
       console.error('판매 오류:', error);
       alert(error.message || '판매 중 오류가 발생했습니다.');
     } finally {
+      // 🔓 전역 잠금 해제 (강화 버튼 다시 활성화)
+      setIsGlobalLocked(false);
       setIsSelling(false);
     }
   };
