@@ -70,6 +70,64 @@ const particleStyles = `
     100% { transform: scale(0.3); opacity: 0; }
   }
   
+  @keyframes cosmic {
+    0% { transform: rotate(0deg) scale(1); opacity: 0.8; }
+    25% { transform: rotate(90deg) scale(1.1); opacity: 1; }
+    50% { transform: rotate(180deg) scale(1.2); opacity: 0.9; }
+    75% { transform: rotate(270deg) scale(1.1); opacity: 1; }
+    100% { transform: rotate(360deg) scale(1); opacity: 0.8; }
+  }
+  
+  @keyframes aurora {
+    0% { transform: translateX(-100%) rotate(0deg); opacity: 0; }
+    25% { transform: translateX(-50%) rotate(180deg); opacity: 1; }
+    50% { transform: translateX(0%) rotate(360deg); opacity: 0.8; }
+    75% { transform: translateX(50%) rotate(540deg); opacity: 1; }
+    100% { transform: translateX(100%) rotate(720deg); opacity: 0; }
+  }
+  
+  @keyframes plasma {
+    0% { transform: scale(0.8) rotate(0deg); opacity: 0.3; }
+    33% { transform: scale(1.2) rotate(120deg); opacity: 0.8; }
+    66% { transform: scale(0.9) rotate(240deg); opacity: 0.6; }
+    100% { transform: scale(0.8) rotate(360deg); opacity: 0.3; }
+  }
+  
+  @keyframes hologram {
+    0% { transform: skewX(0deg) translateZ(0); opacity: 0.7; }
+    25% { transform: skewX(5deg) translateZ(10px); opacity: 1; }
+    50% { transform: skewX(-5deg) translateZ(20px); opacity: 0.8; }
+    75% { transform: skewX(3deg) translateZ(10px); opacity: 1; }
+    100% { transform: skewX(0deg) translateZ(0); opacity: 0.7; }
+  }
+  
+  @keyframes vortex {
+    0% { transform: rotate(0deg) scale(1); border-radius: 50%; }
+    25% { transform: rotate(90deg) scale(1.1); border-radius: 30%; }
+    50% { transform: rotate(180deg) scale(1.2); border-radius: 20%; }
+    75% { transform: rotate(270deg) scale(1.1); border-radius: 30%; }
+    100% { transform: rotate(360deg) scale(1); border-radius: 50%; }
+  }
+  
+  @keyframes lightning {
+    0% { transform: translateX(0) rotate(0deg); opacity: 0; }
+    10% { transform: translateX(-10px) rotate(45deg); opacity: 1; }
+    20% { transform: translateX(10px) rotate(-45deg); opacity: 0.8; }
+    30% { transform: translateX(-5px) rotate(90deg); opacity: 1; }
+    40% { transform: translateX(5px) rotate(-90deg); opacity: 0.6; }
+    50% { transform: translateX(0) rotate(180deg); opacity: 1; }
+    100% { transform: translateX(0) rotate(360deg); opacity: 0; }
+  }
+  
+  @keyframes starBurst {
+    0% { transform: scale(0) rotate(0deg); opacity: 0; }
+    20% { transform: scale(1) rotate(72deg); opacity: 1; }
+    40% { transform: scale(1.2) rotate(144deg); opacity: 0.8; }
+    60% { transform: scale(1.1) rotate(216deg); opacity: 1; }
+    80% { transform: scale(1.3) rotate(288deg); opacity: 0.6; }
+    100% { transform: scale(0) rotate(360deg); opacity: 0; }
+  }
+  
   .animate-subtle-shake { animation: subtleShake 2s ease-in-out infinite; }
   .animate-float { animation: float 3s ease-in-out infinite; }
   .animate-scan { animation: scan 2s ease-in-out infinite; }
@@ -79,6 +137,13 @@ const particleStyles = `
   .animate-spin-reverse { animation: spinReverse 6s linear infinite; }
   .animate-explode { animation: explode 0.6s ease-out forwards; }
   .animate-implode { animation: implode 0.6s ease-in forwards; }
+  .animate-cosmic { animation: cosmic 8s ease-in-out infinite; }
+  .animate-aurora { animation: aurora 6s ease-in-out infinite; }
+  .animate-plasma { animation: plasma 4s ease-in-out infinite; }
+  .animate-hologram { animation: hologram 3s ease-in-out infinite; }
+  .animate-vortex { animation: vortex 5s ease-in-out infinite; }
+  .animate-lightning { animation: lightning 2s ease-in-out infinite; }
+  .animate-star-burst { animation: starBurst 3s ease-in-out infinite; }
 `;
 
 export default function SwordDisplay() {
@@ -233,12 +298,35 @@ export default function SwordDisplay() {
         {/* 검 이미지 - 모든 효과 통합 */}
         <div className="relative mb-4 w-32 h-32 sm:w-40 sm:h-40 flex items-center justify-center">
           
+          {/* 우주적 배경 효과 (20강+) */}
+          {swordLevel >= 20 && (
+            <div className="absolute -inset-8 flex items-center justify-center">
+              <div className="w-full h-full bg-gradient-radial from-purple-900/40 via-pink-900/30 via-blue-900/20 to-transparent animate-cosmic rounded-full"></div>
+              <div className="absolute w-3/4 h-3/4 bg-gradient-radial from-yellow-400/20 via-orange-500/15 to-transparent animate-plasma rounded-full"></div>
+            </div>
+          )}
+          
+          {/* 오로라 효과 (18강+) */}
+          {swordLevel >= 18 && (
+            <div className="absolute -inset-6 overflow-hidden rounded-full">
+              <div className="absolute inset-0 bg-gradient-to-r from-green-400/20 via-blue-500/30 via-purple-600/20 to-pink-500/20 animate-aurora"></div>
+              <div className="absolute inset-0 bg-gradient-to-l from-cyan-400/15 via-violet-500/25 to-yellow-400/15 animate-aurora" style={{animationDelay: '2s'}}></div>
+            </div>
+          )}
+          
           {/* 펄스 웨이브 효과 */}
           {swordLevel >= 5 && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-20 h-20 bg-blue-400/20 rounded-full animate-ping"></div>
               <div className="absolute w-16 h-16 bg-purple-400/20 rounded-full animate-ping" style={{animationDelay: '0.5s'}}></div>
               <div className="absolute w-12 h-12 bg-pink-400/20 rounded-full animate-ping" style={{animationDelay: '1s'}}></div>
+              {/* 추가 펄스 (15강+) */}
+              {swordLevel >= 15 && (
+                <>
+                  <div className="absolute w-24 h-24 bg-yellow-400/15 rounded-full animate-ping" style={{animationDelay: '1.5s'}}></div>
+                  <div className="absolute w-28 h-28 bg-cyan-400/10 rounded-full animate-ping" style={{animationDelay: '2s'}}></div>
+                </>
+              )}
             </div>
           )}
           
