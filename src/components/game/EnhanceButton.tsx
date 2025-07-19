@@ -265,7 +265,12 @@ export default function EnhanceButton() {
         setGaugeResult('success');
         // 성공 결과를 잠깐 보여준 후 상태 업데이트
         setTimeout(() => {
+          const prevCustomChance = customChance; // 현재 커스텀 확률 저장
           setSwordLevel(data.newLevel);
+          // 커스텀 확률이 있었다면 다시 설정 (setSwordLevel이 기본값으로 덮어쓰기 때문)
+          if (prevCustomChance) {
+            setEnhanceChance(prevCustomChance);
+          }
           setResult("success");
           // 성공시 업적 실시간 업데이트
           if (user?.id) {
@@ -282,7 +287,12 @@ export default function EnhanceButton() {
         }, 200);
         // 실패 결과를 잠깐 보여준 후 상태 업데이트
         setTimeout(() => {
+          const prevCustomChance = customChance; // 현재 커스텀 확률 저장
           setSwordLevel(data.newLevel);
+          // 커스텀 확률이 있었다면 다시 설정 (setSwordLevel이 기본값으로 덮어쓰기 때문)
+          if (prevCustomChance) {
+            setEnhanceChance(prevCustomChance);
+          }
           setResult("fail");
           // 실패시 조각 업데이트
           if (data.fragmentsGained > 0) {
@@ -310,8 +320,7 @@ export default function EnhanceButton() {
       setSelectedFragmentBoost(null);
       // 커스텀 확률 리셋 (강화 후 초기화)
       setCustomChance(null);
-      // 기본 성공 확률도 원래대로 복원
-      setEnhanceChance(calculateEnhanceChance(data.newLevel));
+      // 주의: enhanceChance는 리셋하지 않음 (뽑기 확률 유지)
       
       // API 응답 후 안전한 딜레이로 버튼 활성화 (중복 클릭 방지)
       setTimeout(() => {
