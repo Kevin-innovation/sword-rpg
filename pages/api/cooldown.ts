@@ -1,6 +1,18 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { supabase } from '@/lib/supabase';
 
+// 아이템별 쿨타임 시간 (분)
+function getCooldownMinutes(itemType: string): number {
+  switch (itemType) {
+    case 'protect': return 30;
+    case 'doubleChance': return 20;
+    case 'discount': return 15;
+    case 'blessing_scroll': return 25;
+    case 'advanced_protection': return 45;
+    default: return 0;
+  }
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // CORS 처리
   res.setHeader('Access-Control-Allow-Origin', '*');

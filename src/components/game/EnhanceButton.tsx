@@ -89,7 +89,7 @@ export default function EnhanceButton() {
     };
   }, []);
 
-  // 쿨타임 상태 확인
+  // 쿨타임 상태 확인 (클라이언트 로컬 관리)
   useEffect(() => {
     const fetchCooldowns = async () => {
       if (!user?.id) return;
@@ -107,6 +107,8 @@ export default function EnhanceButton() {
         }
       } catch (error) {
         console.error('쿨타임 확인 오류:', error);
+        // 쿨타임 확인 실패 시 빈 객체로 설정 (모든 아이템 사용 가능)
+        setCooldowns({});
       }
     };
 
