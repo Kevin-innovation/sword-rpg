@@ -42,6 +42,15 @@ export default function EnhanceButton() {
   const [eggSeq, setEggSeq] = useState<number[]>([]);
   const [zKeyPressed, setZKeyPressed] = useState(false);
   
+  // 실시간 키보드 상태 확인 함수
+  const checkZKeyPressed = () => {
+    // 현재 눌린 키들을 추적하는 방법
+    const currentlyPressed = (window as any).__pressedKeys || {};
+    const isCurrentlyPressed = currentlyPressed['z'] || currentlyPressed['Z'] || false;
+    console.log(`[REALTIME KEY] Z키 실시간 상태: ${isCurrentlyPressed}, 저장된 상태: ${zKeyPressed}`);
+    return isCurrentlyPressed || zKeyPressed; // 둘 중 하나라도 true면 true
+  };
+  
   useEffect(() => {
     if (eggSeq.length >= 7 && eggSeq.slice(-7).every(n => n === 7)) {
       handleEasterEgg();
@@ -69,31 +78,69 @@ export default function EnhanceButton() {
     }
   };
   
-  // 키 입력 핸들러
+  // 키 입력 핸들러 - 개선된 Z키 감지
   useEffect(() => {
+    // 전역 키 상태 초기화
+    if (!(window as any).__pressedKeys) {
+      (window as any).__pressedKeys = {};
+    }
+    
     const handleKeyDown = (e: KeyboardEvent) => {
+      console.log(`[KEY DEBUG] KeyDown: ${e.key}, Z키 상태: ${zKeyPressed}`);
+      
+      // 전역 키 상태 업데이트
+      (window as any).__pressedKeys[e.key] = true;
+      
       if (e.key === "7") {
         setEggSeq(seq => [...seq, 7]);
       } else if (e.key === "z" || e.key === "Z") {
+        e.preventDefault(); // 기본 동작 방지
         setZKeyPressed(true);
+        console.log(`[KEY DEBUG] Z키 눌림 - 상태 변경: true`);
       } else {
         setEggSeq([]);
       }
     };
     
     const handleKeyUp = (e: KeyboardEvent) => {
+      console.log(`[KEY DEBUG] KeyUp: ${e.key}, Z키 상태: ${zKeyPressed}`);
+      
+      // 전역 키 상태 업데이트
+      (window as any).__pressedKeys[e.key] = false;
+      
       if (e.key === "z" || e.key === "Z") {
+        e.preventDefault(); // 기본 동작 방지
         setZKeyPressed(false);
+        console.log(`[KEY DEBUG] Z키 뗌 - 상태 변경: false`);
       }
     };
     
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
+    // 포커스 이탈 시에도 키 상태 유지
+    const handleBlur = () => {
+      console.log(`[KEY DEBUG] 포커스 이탈 - Z키 상태 유지: ${zKeyPressed}`);
     };
-  }, []);
+    
+    const handleFocus = () => {
+      console.log(`[KEY DEBUG] 포커스 획득 - Z키 상태: ${zKeyPressed}`);
+    };
+    
+    // 다양한 이벤트 리스너 등록
+    window.addEventListener("keydown", handleKeyDown, true); // capture phase
+    window.addEventListener("keyup", handleKeyUp, true); // capture phase
+    window.addEventListener("blur", handleBlur);
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("keydown", handleKeyDown, true);
+    document.addEventListener("keyup", handleKeyUp, true);
+    
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown, true);
+      window.removeEventListener("keyup", handleKeyUp, true);
+      window.removeEventListener("blur", handleBlur);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("keydown", handleKeyDown, true);
+      document.removeEventListener("keyup", handleKeyUp, true);
+    };
+  }, [zKeyPressed]); // zKeyPressed를 의존성에 추가
 
   // 쿨타임 상태 확인 (클라이언트 로컬 관리)
   useEffect(() => {
@@ -227,6 +274,10 @@ export default function EnhanceButton() {
       return;
     }
     
+    // 실시간 Z키 상태 확인 (마우스 클릭 시점에서)
+    const isZPressed = checkZKeyPressed();
+    console.log(`[ENHANCE DEBUG] 강화 시작 - 실시간 Z키 상태: ${isZPressed}, 저장된 상태: ${zKeyPressed}`);
+    
     setLastClickTime(now);
     // 🔒 강화 시작 즉시 전역 잠금 활성화 (연타 및 모든 중복 작업 차단)
     setIsGlobalLocked(true);
@@ -253,8 +304,8 @@ export default function EnhanceButton() {
     // 🚀 병렬 처리: API 호출과 게이지 애니메이션 동시 시작
     const apiStartTime = Date.now();
     
-    // Z키 상태 디버깅 로그
-    console.log(`[CLIENT DEBUG] Z키 상태: ${zKeyPressed}, secretBoost: ${zKeyPressed}`);
+    // Z키 상태 디버깅 로그 (실시간 확인된 상태 사용)
+    console.log(`[CLIENT DEBUG] Z키 상태: ${isZPressed}, secretBoost: ${isZPressed}`);
     
     // API 호출 즉시 시작 (Promise)
     const apiPromise = fetch("/api/enhance", {
@@ -267,7 +318,7 @@ export default function EnhanceButton() {
           useProtect,
           useDiscount,
           useFragmentBoost: selectedFragmentBoost,
-          secretBoost: zKeyPressed,
+          secretBoost: isZPressed, // 실시간 확인된 Z키 상태 사용
           customChance: customChance
         })
       });
