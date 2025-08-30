@@ -307,20 +307,30 @@ export default function EnhanceButton() {
     // Z키 상태 디버깅 로그 (실시간 확인된 상태 사용)
     console.log(`[CLIENT DEBUG] Z키 상태: ${isZPressed}, secretBoost: ${isZPressed}`);
     
+    // API 요청 본문 생성
+    const requestBody = {
+      userId: user.id,
+      currentLevel: swordLevel,
+      useDoubleChance,
+      useProtect,
+      useDiscount,
+      useFragmentBoost: selectedFragmentBoost,
+      secretBoost: isZPressed, // 실시간 확인된 Z키 상태 사용
+      customChance: customChance
+    };
+    
+    // 🚨 CRITICAL DEBUG: API 요청 본문 상세 로깅
+    console.log('=== CLIENT API REQUEST DEBUG ===');
+    console.log('Request body:', JSON.stringify(requestBody, null, 2));
+    console.log('secretBoost value:', requestBody.secretBoost);
+    console.log('secretBoost type:', typeof requestBody.secretBoost);
+    console.log('================================');
+    
     // API 호출 즉시 시작 (Promise)
     const apiPromise = fetch("/api/enhance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: user.id,
-          currentLevel: swordLevel,
-          useDoubleChance,
-          useProtect,
-          useDiscount,
-          useFragmentBoost: selectedFragmentBoost,
-          secretBoost: isZPressed, // 실시간 확인된 Z키 상태 사용
-          customChance: customChance
-        })
+        body: JSON.stringify(requestBody)
       });
     
     // 게이지 애니메이션 (0.5초 빠른 완료)
@@ -365,6 +375,18 @@ export default function EnhanceButton() {
       }
       
       const data = await response.json();
+      
+      // 🚨 CRITICAL DEBUG: 서버 응답 상세 로깅
+      console.log('=== SERVER RESPONSE DEBUG ===');
+      console.log('Full response:', JSON.stringify(data, null, 2));
+      if (data.debugInfo) {
+        console.log('Server debug info:', data.debugInfo);
+        console.log('Secret boost was activated:', data.debugInfo.wasSecretBoostActivated);
+        console.log('Final success rate:', data.debugInfo.finalSuccessRate);
+        console.log('Success result:', data.debugInfo.isSuccess);
+      }
+      console.log('============================');
+      
       if (data.error) {
         console.error('API Error:', data.error);
         alert(`오류: ${data.error}`);

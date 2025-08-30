@@ -51,6 +51,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     customChance = null
   } = req.body;
 
+  // 🚨 CRITICAL DEBUG: secretBoost 파라미터 상세 로깅
+  console.log('=== SECRET BOOST DEBUG ===');
+  console.log('Raw req.body:', JSON.stringify(req.body, null, 2));
+  console.log('secretBoost value:', secretBoost);
+  console.log('secretBoost type:', typeof secretBoost);
+  console.log('secretBoost === true:', secretBoost === true);
+  console.log('secretBoost == true:', secretBoost == true);
+  console.log('========================');
+
   // 1. 기본 유효성 검증
   if (!userId || currentLevel === undefined) {
     return res.status(400).json({ error: 'Invalid parameters' });
@@ -465,7 +474,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     newMoney: user.money - enhanceCost,
     newFragments: newFragments,
     moneySpent: result.moneySpent,
-    updatedItems: updatedItems // 업데이트된 아이템 수량 포함
+    updatedItems: updatedItems, // 업데이트된 아이템 수량 포함
+    
+    // 🚨 DEBUG 정보 추가
+    debugInfo: {
+      receivedSecretBoost: secretBoost,
+      finalSuccessRate: successRate,
+      wasSecretBoostActivated: secretBoost === true,
+      attempts: typeof attempts !== 'undefined' ? attempts : 'N/A',
+      isSuccess: isSuccess
+    }
   });
 
   // 9. 업적 업데이트 (백그라운드에서 비동기 처리)
