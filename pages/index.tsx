@@ -46,7 +46,10 @@ export default function Home() {
               검 강화하기 by DLAB Kevin
             </h1>
             <p className="text-xs text-white/50 mt-1">
-              최신 버전 : 2025.07.19 v.3.0
+              최신 버전 : 2025.08.30 v.4.0
+            </p>
+            <p className="text-xs text-purple-300/70 mt-1">
+              지난 시즌 최고 점수 업적 🏆 1등 : sword
             </p>
           </div>
           

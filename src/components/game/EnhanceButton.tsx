@@ -123,10 +123,11 @@ export default function EnhanceButton() {
     return () => clearInterval(interval);
   }, [user?.id]);
 
-  // 강화확률 뽑기 함수
+  // 강화확률 뽑기 함수 - 단계별 비용 적용
   const handleChanceRoll = async () => {
-    if (money < 20000) {
-      alert('골드가 부족합니다! (필요: 20,000G)');
+    const rollCost = Math.max(20000, swordLevel * 20000);
+    if (money < rollCost) {
+      alert(`골드가 부족합니다! (필요: ${rollCost.toLocaleString()}G)`);
       return;
     }
     
@@ -139,7 +140,10 @@ export default function EnhanceButton() {
       const response = await fetch('/api/chance-roll', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id })
+        body: JSON.stringify({ 
+          userId: user.id,
+          currentLevel: swordLevel 
+        })
       });
       
       if (!response.ok) {
@@ -156,7 +160,7 @@ export default function EnhanceButton() {
         // 기본 성공 확률 텍스트는 건드리지 않음 (버그 방지)
         setIsRolling(false);
         
-        alert(`축하합니다! ${data.customChance}% 확률을 획득했습니다!`);
+        alert(data.message || `축하합니다! ${data.customChance}% 확률을 획득했습니다!`);
       }, 1000);
       
     } catch (error) {
@@ -569,17 +573,17 @@ export default function EnhanceButton() {
       <div className="flex gap-2 md:gap-3 w-full">
         <button
           className={`flex-1 py-2 md:py-3 rounded-xl font-bold text-sm md:text-base shadow-lg transition-all duration-300 ${
-            money >= 20000 && !isRolling
+            money >= Math.max(20000, swordLevel * 20000) && !isRolling
               ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white hover:from-yellow-500 hover:to-orange-600'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
           onClick={handleChanceRoll}
-          disabled={money < 20000 || isRolling}
+          disabled={money < Math.max(20000, swordLevel * 20000) || isRolling}
         >
           <div className="flex flex-col items-center">
             <span className="text-lg">{isRolling ? '🎲' : '🎯'}</span>
             <span>{isRolling ? '뽑기 중...' : '강화확률 뽑기'}</span>
-            <span className="text-xs opacity-80">20,000G</span>
+            <span className="text-xs opacity-80">{Math.max(20000, swordLevel * 20000).toLocaleString()}G</span>
             {customChance && (
               <span className="text-xs font-normal">당첨! {customChance}%!</span>
             )}
@@ -695,15 +699,9 @@ export default function EnhanceButton() {
           {/* 하단 그라데이션 */}
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-white/40 to-transparent"></div>
         </motion.button>
-        {/* 아이템 사용 UI */}
+        {/* 아이템 사용 UI - 2배 주문서 삭제됨 */}
         <div className="flex gap-2 md:gap-3 w-full justify-between">
-          <button
-            className={`flex-1 px-2 md:px-3 py-1 md:py-2 rounded bg-blue-100 text-blue-700 text-xs md:text-sm font-semibold border border-blue-300 transition disabled:opacity-40 disabled:cursor-not-allowed ${useDoubleChance ? 'ring-2 ring-blue-400' : ''}`}
-            disabled={items.doubleChance === 0 || disabled || (cooldowns.doubleChance > 0)}
-            onClick={() => setUseDoubleChance(v => !v)}
-          >
-            {cooldowns.doubleChance > 0 ? `쿨타임 ${cooldowns.doubleChance}분` : `확률2배(${items.doubleChance})`}
-          </button>
+          {/* 2배 주문서 삭제됨 */}
           <button
             className={`flex-1 px-2 md:px-3 py-1 md:py-2 rounded bg-green-100 text-green-700 text-xs md:text-sm font-semibold border border-green-300 transition disabled:opacity-40 disabled:cursor-not-allowed ${useProtect ? 'ring-2 ring-green-400' : ''}`}
             disabled={items.protect === 0 || disabled || (cooldowns.protect > 0)}

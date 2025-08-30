@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { supabase } from '@/lib/supabase';
+import { calculateEnhanceChance } from '../../src/lib/gameLogic';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // CORS 처리
@@ -15,10 +16,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { userId } = req.body;
+  const { userId, currentLevel } = req.body;
 
-  if (!userId) {
-    return res.status(400).json({ error: 'User ID is required' });
+  if (!userId || currentLevel === undefined) {
+    return res.status(400).json({ error: 'User ID and current level are required' });
   }
 
   try {
@@ -34,37 +35,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // 골드 확인
-    if (user.money < 20000) {
-      return res.status(400).json({ error: 'Not enough money' });
-    }
-
-    // 확률 계산
-    const rand = Math.random() * 100;
-    let newChance;
+    // 단계별 뽑기 비용 계산 (단계 * 2만원)
+    const rollCost = Math.max(20000, currentLevel * 20000);
     
-    if (rand < 80) {
-      // 1~30% (80% 확률)
-      newChance = Math.floor(Math.random() * 30) + 1;
-    } else if (rand < 90) {
-      // 40~50% (10% 확률)  
-      newChance = Math.floor(Math.random() * 11) + 40;
-    } else if (rand < 95) {
-      // 60~80% (5% 확률)
-      newChance = Math.floor(Math.random() * 21) + 60;
-    } else if (rand < 98) {
-      // 80~90% (3% 확률)
-      newChance = Math.floor(Math.random() * 11) + 80;
-    } else {
-      // 100% (2% 확률)
-      newChance = 100;
+    // 골드 확인
+    if (user.money < rollCost) {
+      return res.status(400).json({ 
+        error: 'Not enough money',
+        required: rollCost,
+        current: user.money
+      });
     }
 
-    // 골드 차감
+    // 현재 단계의 기본 성공 확률 가져오기
+    const baseChance = calculateEnhanceChance(currentLevel);
+    
+    // ±10% 범위 내에서 확률 결정
+    const minChance = Math.max(1, baseChance - 10);
+    const maxChance = Math.min(100, baseChance + 10);
+    
+    // 균등 분포로 확률 결정
+    const newChance = Math.floor(Math.random() * (maxChance - minChance + 1)) + minChance;
+
+    // 골드 차감 (단계별 비용)
     const { data: updatedUser, error: updateError } = await supabase
       .from('users')
       .update({ 
-        money: user.money - 20000,
+        money: user.money - rollCost,
         updated_at: new Date().toISOString()
       })
       .eq('id', userId)
@@ -80,7 +77,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       success: true,
       newMoney: updatedUser.money,
       customChance: newChance,
-      message: `${newChance}% 확률을 획득했습니다!`
+      baseChance: baseChance,
+      rollCost: rollCost,
+      message: `${newChance}% 확률을 획득했습니다! (기본 ${baseChance}% 대비 ${newChance >= baseChance ? '+' : ''}${newChance - baseChance}%)`
     });
 
   } catch (error) {

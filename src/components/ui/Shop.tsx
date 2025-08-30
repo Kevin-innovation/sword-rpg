@@ -4,14 +4,7 @@ import { ORDER_COST, ITEM_LIMITS } from "@/lib/gameLogic";
 import { apiRequest } from "@/lib/apiUtils";
 
 const initialItems = [
-  // 기본 주문서류
-  {
-    id: "doubleChance",
-    name: "확률 2배 주문서",
-    desc: "다음 강화 성공 확률이 2배로 증가",
-    price: ORDER_COST.doubleChance,
-    category: "basic"
-  },
+  // 기본 주문서류 - 2배 주문서 삭제됨
   {
     id: "protect",
     name: "보호 주문서",
@@ -80,9 +73,9 @@ const Shop = () => {
   const swordLevel = useGameState((s) => s.swordLevel);
   const [purchasing, setPurchasing] = useState<string | null>(null);
   
-  // 카테고리별 아이템 분류
+  // 카테고리별 아이템 분류 - 2배 주문서 제외
   const categorizedItems = {
-    basic: initialItems.filter(item => item.category === "basic"),
+    basic: initialItems.filter(item => item.category === "basic" && item.id !== "doubleChance"),
     material: initialItems.filter(item => item.category === "material"),
     advanced: initialItems.filter(item => item.category === "advanced"),
     special: initialItems.filter(item => item.category === "special")
@@ -152,7 +145,7 @@ const Shop = () => {
         보유 골드: <span className="font-bold text-yellow-600">{money.toLocaleString()} G</span>
       </div>
       <div className="space-y-3 md:space-y-4">
-        {initialItems.map((item) => {
+        {initialItems.filter(item => item.id !== "doubleChance").map((item) => {
           const isLevelLocked = item.requiredLevel && swordLevel < item.requiredLevel;
           const isMaxQuantity = (items[item.id] || 0) >= (ITEM_LIMITS.maxQuantity[item.id] || 10);
           const canAfford = money >= item.price;

@@ -4,6 +4,18 @@ import { calculateEnhanceChance, calculateEnhanceCost, calculateFragmentsGained,
 import { supabase } from '../../lib/supabase';
 import type { User, Sword } from '../../lib/types';
 
+// 아이템별 쿨타임 시간 (분) - 서버사이드 검증용
+function getCooldownMinutes(itemType: string): number {
+  switch (itemType) {
+    case 'protect': return 30;
+    case 'doubleChance': return 20;
+    case 'discount': return 15;
+    case 'blessing_scroll': return 25;
+    case 'advanced_protection': return 45;
+    default: return 0;
+  }
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // CORS 처리
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -144,14 +156,41 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(404).json({ error: 'Sword not found' });
   }
 
-  // 4. 아이템 보유 확인 및 쿨타임 체크
+  // 4. 아이템 보유 확인 및 쿨타임 체크 - 2배 주문서 삭제됨
   const usedItems = [];
-  if (useDoubleChance) usedItems.push('doubleChance');
+  // if (useDoubleChance) usedItems.push('doubleChance'); // 2배 주문서 삭제됨
   if (useProtect) usedItems.push('protect');
   if (useDiscount) usedItems.push('discount');
   
-  // 쿨타임 체크는 클라이언트에서만 처리하고 서버에서는 생략
-  // (성능 향상 및 통신 오류 방지)
+  // 🚨 서버사이드 쿨타임 검증 강화 (30분 버그 완전 수정)
+  // 클라이언트 우회 방지를 위한 필수 서버 검증
+  const now = new Date();
+  
+  // 사용된 아이템들의 쿨타임 검증
+  if (usedItems.length > 0) {
+    const { data: cooldowns, error: cooldownError } = await supabase
+      .from('item_cooldowns')
+      .select('item_type, last_used_at')
+      .eq('user_id', userId)
+      .in('item_type', usedItems);
+    
+    if (!cooldownError && cooldowns) {
+      for (const cooldown of cooldowns) {
+        const lastUsed = new Date(cooldown.last_used_at);
+        const cooldownMinutes = getCooldownMinutes(cooldown.item_type);
+        const elapsedMinutes = (now.getTime() - lastUsed.getTime()) / (1000 * 60);
+        
+        if (elapsedMinutes < cooldownMinutes) {
+          const remainingMinutes = Math.ceil(cooldownMinutes - elapsedMinutes);
+          return res.status(400).json({ 
+            error: `${cooldown.item_type} 쿨타임이 ${remainingMinutes}분 남아있습니다`,
+            cooldownRemaining: remainingMinutes,
+            itemType: cooldown.item_type
+          });
+        }
+      }
+    }
+  }
   
   // 아이템 보유 수량 확인 (병렬 처리로 성능 개선)
   if (usedItems.length > 0) {
@@ -208,10 +247,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } else if (customChance !== null && typeof customChance === 'number') {
     // 커스텀 확률이 있으면 그것을 기본값으로 사용
     successRate = customChance;
-    if (useDoubleChance) successRate = Math.min(successRate * 2, 100);
+    // if (useDoubleChance) successRate = Math.min(successRate * 2, 100); // 2배 주문서 삭제됨
     if (fragmentBoost > 0) successRate = calculateBoostedChance(successRate, fragmentBoost);
   } else {
-    if (useDoubleChance) successRate = Math.min(successRate * 2, 100);
+    // if (useDoubleChance) successRate = Math.min(successRate * 2, 100); // 2배 주문서 삭제됨
     if (fragmentBoost > 0) successRate = calculateBoostedChance(successRate, fragmentBoost);
   }
   
@@ -260,9 +299,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     };
   }
 
-  // 5. 아이템 소비 처리 및 쿨타임 기록 (응답 전에 처리하여 확실히 반영)
+  // 5. 아이템 소비 처리 및 쿨타임 기록 - 2배 주문서 삭제됨
   const updatedItems = { 
-    doubleChance: 0, 
+    // doubleChance: 0,  // 2배 주문서 삭제됨
     protect: 0, 
     discount: 0,
     magic_stone: 0,
@@ -311,7 +350,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // 쿨타임 기록 (간단하게 처리, 실패해도 무시)
     try {
       for (const itemType of usedItems) {
-        if (['protect', 'doubleChance', 'discount'].includes(itemType)) {
+        if (['protect', 'discount'].includes(itemType)) { // 2배 주문서 삭제됨
           await supabase
             .from('item_cooldowns')
             .upsert({

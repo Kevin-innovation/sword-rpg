@@ -157,33 +157,61 @@ export function calculateMaterialConsumption(level: number): {
   };
 }
 
-// 누적 강화 비용 계산 함수 (로그 함수 기반)
+// 누적 강화 비용 계산 함수 (로그 함수 제거, 단순 누적)
 export function calculateTotalEnhanceCost(level: number): number {
   let total = 0;
   for (let i = 0; i < level; i++) {
     total += calculateEnhanceCost(i);
   }
-  // 로그 함수로 보정: 레벨이 높을수록 더 가파르게 상승
-  // (log(level+1) * total) - level이 0일 때도 0 방지
-  if (level <= 1) return total;
-  return Math.floor(Math.log(level + 1) * total);
+  // 로그 함수 제거 - 단순 누적만 사용
+  return total;
 }
 
-// 검 판매가 (상점 아이템 가격과 균형 맞춤)
+// 검 판매가 (30강 기준 최대 3천만원으로 제한)
 export const calculateSwordSellPrice = (level: number): number => {
-  const base = calculateTotalEnhanceCost(level);
-  // 더 완만한 증가율로 수정
-  if (level < 5) return Math.floor(base * 1.5);      // 초반: 1.5배
-  if (level < 10) return Math.floor(base * 1.8);     // 중반: 1.8배
-  if (level < 15) return Math.floor(base * 2.0);     // 고급: 2.0배
-  if (level < 20) return Math.floor(base * 2.2);     // 전설: 2.2배
-  return Math.floor(base * 2.5);                     // 신화: 2.5배
+  if (level === 0) return 0;
+  
+  // 30강 = 30,000,000원을 목표로 하는 선형/로그 혼합 공식
+  // 점진적 증가하되 30강에서 3천만원을 넘지 않도록 조정
+  
+  // 1~5강: 매우 저가 (1만~10만)
+  if (level <= 5) {
+    return level * 20000; // 2만, 4만, 6만, 8만, 10만
+  }
+  
+  // 6~10강: 저가 (12만~50만)
+  if (level <= 10) {
+    return 100000 + (level - 5) * 80000; // 18만, 26만, 34만, 42만, 50만
+  }
+  
+  // 11~15강: 중가 (70만~200만)
+  if (level <= 15) {
+    return 500000 + (level - 10) * 300000; // 80만, 110만, 140만, 170만, 200만
+  }
+  
+  // 16~20강: 고가 (300만~800만)
+  if (level <= 20) {
+    return 2000000 + (level - 15) * 1200000; // 320만, 440만, 560만, 680만, 800만
+  }
+  
+  // 21~25강: 최고가 (1000만~2000만)
+  if (level <= 25) {
+    return 8000000 + (level - 20) * 2400000; // 1040만, 1280만, 1520만, 1760만, 2000만
+  }
+  
+  // 26~30강: 전설가 (2200만~3000만)
+  if (level <= 30) {
+    return 20000000 + (level - 25) * 2000000; // 2200만, 2400만, 2600만, 2800만, 3000만
+  }
+  
+  // 30강 초과시 최대값 고정
+  return 30000000; // 3000만원 고정
 };
 
 // 주문서 및 특수 재료 비용 상수 (게임 밸런스 개선을 위한 가격 조정)
 export const ORDER_COST = {
   protect: 100000,          // 보호 주문서 - 실패 시 레벨 하락 방지 (15k → 100k)
-  doubleChance: 150000,     // 확률 x2 - 강화 성공 확률 2배 (15k → 150k)
+  // doubleChance: 150000,  // 2배 주문서 삭제됨
   discount: 80000,          // 비용 절약 - 강화 비용 50% 할인 (15k → 80k)
   magic_stone: 25000,       // 마력석 - 10강+ 필수 재료
   purification_water: 50000, // 정화수 - 15강+ 필수 재료  
@@ -197,7 +225,7 @@ export const ITEM_LIMITS = {
   // 기본 주문서 제한 (게임 밸런스를 위해 엄격하게 제한)
   maxQuantity: {
     protect: 3,           // 보호 주문서 최대 3개
-    doubleChance: 3,      // 확률 2배 최대 3개
+    // doubleChance: 3,   // 2배 주문서 삭제됨
     discount: 3,          // 할인 주문서 최대 3개
     blessing_scroll: 3,   // 축복서 최대 3개
     advanced_protection: 3, // 고급 보호권 최대 3개
@@ -210,7 +238,7 @@ export const ITEM_LIMITS = {
   // 주문서 사용 쿨타임 (분 단위)
   cooldown: {
     protect: 30,          // 보호 주문서 30분 쿨타임
-    doubleChance: 20,     // 확률 2배 20분 쿨타임
+    // doubleChance: 20,  // 2배 주문서 삭제됨
     discount: 15,         // 할인 주문서 15분 쿨타임
     blessing_scroll: 25,  // 축복서 25분 쿨타임
     advanced_protection: 45 // 고급 보호권 45분 쿨타임
