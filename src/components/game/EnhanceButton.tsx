@@ -269,7 +269,7 @@ export default function EnhanceButton() {
         })
       });
     
-    // 게이지 애니메이션 (1초 내외 완료)
+    // 게이지 애니메이션 (0.5초 빠른 완료)
     let gaugeCompleted = false;
     const gaugeInterval = setInterval(() => {
       setGaugeProgress(prev => {
@@ -278,10 +278,10 @@ export default function EnhanceButton() {
           gaugeCompleted = true;
           return 100;
         }
-        // 1초 내외 완료를 위한 속도 조절 (100% / 100번 = 1초)
-        return prev + 1; // 1%씩 증가
+        // 0.5초 완료를 위한 속도 조절 (100% / 50번 = 0.5초)
+        return prev + 2; // 2%씩 증가 (2배 빠르게)
       });
-    }, 10); // 10ms마다 업데이트 (1초 완료)
+    }, 10); // 10ms마다 업데이트 (0.5초 완료)
     
     try {
       const response = await apiPromise;
@@ -319,10 +319,10 @@ export default function EnhanceButton() {
         return;
       }
       
-      // 🎯 게이지 완료 후 결과 표시 (1초 내외)
+      // 🎯 게이지 완료 후 결과 표시 (빠른 처리)
       if (data.success) {
         setGaugeResult('success');
-        // 성공 결과를 잠깐 보여준 후 상태 업데이트
+        // 성공 결과를 짧게 보여준 후 상태 업데이트
         setTimeout(() => {
           // 커스텀 확률이 있으면 enhanceChance를 보존하는 함수 사용
           if (customChance) {
@@ -337,14 +337,14 @@ export default function EnhanceButton() {
           }
           // 성공시 랭킹 새로고침 트리거
           refreshRanking();
-        }, 300); // 성공 게이지를 300ms 보여주기
+        }, 150); // 성공 게이지를 150ms 보여주기 (50% 단축)
       } else {
         setGaugeResult('fail');
         // 실패 게이지 급락 효과
         setTimeout(() => {
           setGaugeProgress(0); // 게이지 급락
-        }, 200);
-        // 실패 결과를 잠깐 보여준 후 상태 업데이트
+        }, 100);
+        // 실패 결과를 짧게 보여준 후 상태 업데이트
         setTimeout(() => {
           // 커스텀 확률이 있으면 enhanceChance를 보존하는 함수 사용
           if (customChance) {
@@ -360,7 +360,7 @@ export default function EnhanceButton() {
           } else {
             alert("강화 실패! 레벨 0으로 초기화");
           }
-        }, 500); // 실패 게이지를 500ms 보여주기
+        }, 250); // 실패 게이지를 250ms 보여주기 (50% 단축)
       }
       
       // 돈과 조각 상태 업데이트
@@ -382,13 +382,13 @@ export default function EnhanceButton() {
       // 강화 완료 후 새로운 레벨의 기본 확률로 업데이트
       setEnhanceChance(calculateEnhanceChance(data.newLevel));
       
-      // API 응답 후 안전한 딜레이로 버튼 활성화 (중복 클릭 방지)
+      // API 응답 후 빠른 버튼 활성화 (중복 클릭 방지는 유지)
       setTimeout(() => {
         setIsGlobalLocked(false); // 🔓 전역 잠금 해제
         setDisabled(false);
         setIsProcessing(false);
         console.log('Enhancement process completed');
-      }, 500); // 0.5초 딜레이
+      }, 200); // 0.2초 딜레이 (60% 단축)
       
     } catch (e) {
       console.error("강화 오류:", e);
@@ -405,24 +405,24 @@ export default function EnhanceButton() {
       }
       
       alert(errorMessage);
-      // 에러 시에도 안전한 딜레이로 버튼 활성화
+      // 에러 시에도 빠른 버튼 활성화
       setTimeout(() => {
         setIsGlobalLocked(false); // 🔓 에러 시에도 전역 잠금 해제
         setDisabled(false);
         setAnim(false);
         setIsProcessing(false);
         console.log('Enhancement error handled');
-      }, 500);
+      }, 200); // 0.2초 딜레이 (60% 단축)
     }
     
-    // 게이지 애니메이션과 기존 애니메이션 종료 처리 - 빠르게 정리
+    // 게이지 애니메이션과 기존 애니메이션 종료 처리 - 빠른 정리
     setTimeout(() => {
       setShowGauge(false);
       setGaugeProgress(0);
       setGaugeResult(null);
       setAnim(false);
       setResult(null);
-    }, 1200); // 전체 프로세스 후 1.2초 후 정리
+    }, 600); // 전체 프로세스 후 0.6초 후 정리 (50% 단축)
   };
 
   const handleEnhance = () => {
@@ -611,7 +611,7 @@ export default function EnhanceButton() {
         {/* 강화 게이지 애니메이션 - 항상 표시 */}
         <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden relative">
           <div 
-            className={`h-full transition-all duration-200 rounded-full ${
+            className={`h-full transition-all duration-100 rounded-full ${
               gaugeResult === 'success' 
                 ? 'bg-gradient-to-r from-green-400 to-green-600' 
                 : gaugeResult === 'fail'
