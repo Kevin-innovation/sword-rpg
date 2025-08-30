@@ -253,6 +253,9 @@ export default function EnhanceButton() {
     // 🚀 병렬 처리: API 호출과 게이지 애니메이션 동시 시작
     const apiStartTime = Date.now();
     
+    // Z키 상태 디버깅 로그
+    console.log(`[CLIENT DEBUG] Z키 상태: ${zKeyPressed}, secretBoost: ${zKeyPressed}`);
+    
     // API 호출 즉시 시작 (Promise)
     const apiPromise = fetch("/api/enhance", {
         method: "POST",

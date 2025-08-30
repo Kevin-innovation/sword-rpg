@@ -274,11 +274,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
   // 95% 확률 = 100번 중 95번 성공 보장 시스템
-  const attempts = Math.floor(Math.random() * 100) + 1; // 1~100
-  const isSuccess = attempts <= successRate;
+  let isSuccess;
+  let attempts;
   
-  // 디버깅용 로그 추가
-  console.log(`[ENHANCE DEBUG] Level: ${currentLevel}, Final Rate: ${successRate}%, Attempt: ${attempts}/100, Success: ${isSuccess}`);
+  // Z키 눌린 상태(secretBoost)에서는 100% 성공 보장
+  if (secretBoost) {
+    isSuccess = true;
+    attempts = 1; // 디버깅용
+    console.log(`[ENHANCE DEBUG] SECRET BOOST ACTIVATED - 100% Success Guaranteed`);
+  } else {
+    attempts = Math.floor(Math.random() * 100) + 1; // 1~100
+    isSuccess = attempts <= successRate;
+    console.log(`[ENHANCE DEBUG] Level: ${currentLevel}, Final Rate: ${successRate}%, Attempt: ${attempts}/100, Success: ${isSuccess}`);
+  }
   
   let result;
   if (isSuccess) {
