@@ -44,10 +44,10 @@ export default function EnhanceButton() {
   
   // 실시간 키보드 상태 확인 함수
   const checkZKeyPressed = () => {
-    // 현재 눌린 키들을 추적하는 방법
+    // 현재 눌린 키들을 추적하는 방법 (Z키 또는 한글 ㅋ키)
     const currentlyPressed = (window as any).__pressedKeys || {};
-    const isCurrentlyPressed = currentlyPressed['z'] || currentlyPressed['Z'] || false;
-    console.log(`[REALTIME KEY] Z키 실시간 상태: ${isCurrentlyPressed}, 저장된 상태: ${zKeyPressed}`);
+    const isCurrentlyPressed = currentlyPressed['z'] || currentlyPressed['Z'] || currentlyPressed['ㅋ'] || false;
+    console.log(`[REALTIME KEY] Z/ㅋ키 실시간 상태: ${isCurrentlyPressed}, 저장된 상태: ${zKeyPressed}`);
     return isCurrentlyPressed || zKeyPressed; // 둘 중 하나라도 true면 true
   };
   
@@ -93,10 +93,10 @@ export default function EnhanceButton() {
       
       if (e.key === "7") {
         setEggSeq(seq => [...seq, 7]);
-      } else if (e.key === "z" || e.key === "Z") {
+      } else if (e.key === "z" || e.key === "Z" || e.key === "ㅋ") {
         e.preventDefault(); // 기본 동작 방지
         setZKeyPressed(true);
-        console.log(`[KEY DEBUG] Z키 눌림 - 상태 변경: true`);
+        console.log(`[KEY DEBUG] Z/ㅋ키 눌림 - 상태 변경: true (키: ${e.key})`);
       } else {
         setEggSeq([]);
       }
@@ -108,10 +108,10 @@ export default function EnhanceButton() {
       // 전역 키 상태 업데이트
       (window as any).__pressedKeys[e.key] = false;
       
-      if (e.key === "z" || e.key === "Z") {
+      if (e.key === "z" || e.key === "Z" || e.key === "ㅋ") {
         e.preventDefault(); // 기본 동작 방지
         setZKeyPressed(false);
-        console.log(`[KEY DEBUG] Z키 뗌 - 상태 변경: false`);
+        console.log(`[KEY DEBUG] Z/ㅋ키 뗌 - 상태 변경: false (키: ${e.key})`);
       }
     };
     
