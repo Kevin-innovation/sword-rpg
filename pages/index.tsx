@@ -43,13 +43,13 @@ export default function Home() {
           {/* 게임 타이틀 */}
           <div className="text-center">
             <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 bg-clip-text text-transparent drop-shadow-lg">
-              검 강화하기 by DLAB Kevin
+              검 강화하기 시즌2
             </h1>
             <p className="text-xs text-white/50 mt-1">
               최신 버전 : 2025.08.30 v.4.0
             </p>
             <p className="text-xs text-purple-300/70 mt-1">
-              지난 시즌 최고 점수 업적 🏆 1등 : sword
+              지난 시즌 최고 점수 🏆 1등 : Sword (하x우 학생)
             </p>
           </div>
           
